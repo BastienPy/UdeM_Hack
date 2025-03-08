@@ -51,7 +51,7 @@ session = Session()
 def init_sample_data():
     if session.query(Recipe).count() == 0:
         # Create sample ingredients
-        ingredients_list = ["chicken", "lettuce", "tomato", "cucumber", "pasta", "bell pepper", "zucchini", "egg", "mushroom", "cheese"]
+        ingredients_list = ["chicken", "soda can", "lettuce", "tomato", "cucumber", "watermelon", "carrots", "bell pepper", "zucchini", "egg", "mushroom", "cheese"]
         ingredient_objs = {}
         for ing in ingredients_list:
             ingredient_obj = Ingredient(name=ing)
@@ -131,10 +131,10 @@ def analyze_fridge_image(image):
     """
     try:
         # Load the CLIP model and processor (this requires downloading the model on first run)
-        model = CLIPModel.from_pretrained("openai/clip-vit-base-patch16")
-        processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
+        model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14-336")
+        processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14-336")
         # Define potential ingredients
-        possible_ingredients = ["chicken", "lettuce", "tomato", "cucumber", "pasta", "bell pepper", "zucchini", "egg", "mushroom", "cheese"]
+        possible_ingredients = ["chicken", "lettuce", "tomato", "cucumber", "pasta", "bell pepper", "zucchini", "egg", "mushroom", "cheese","banana"] #TODO : mettre les ingrédients uniques de la base de données de recettes
         inputs = processor(text=possible_ingredients, images=image, return_tensors="pt", padding=True)
         outputs = model(**inputs)
         logits_per_image = outputs.logits_per_image
