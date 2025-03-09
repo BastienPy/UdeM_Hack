@@ -114,27 +114,48 @@ def show():
             # Display the Plotly chart in Streamlit
             st.plotly_chart(fig)
         with col2:
-            # Récupération des activités
-            username = st.session_state["user"]
-            activity_data = get_activities(username)
+            # PDV Temporal Graph using Plotly
+            st.write("**PDV Temporal Graph**")
 
-            # Convertir les données en DataFrame
-            df_activities = pd.DataFrame(activity_data, columns=["Activity", "Start Time", "Calories", "BMR Calories", "Steps"])
-            df_activities["Start Time"] = pd.to_datetime(df_activities["Start Time"], errors='coerce')
+            # Prepare a DataFrame for PDV data
+            pdv_df = pd.DataFrame(pdv_data, columns=[
+                'total_fat_PDV', 'sugar_PDV', 'sodium_PDV', 'protein_PDV', 
+                'saturated_fat_PDV', 'carbohydrates_PDV', 'some_other_variable', 'Date'
+            ])
 
-            # Filtrer les activités depuis le début
-            df_last_month = df_activities
+            # Convert the "Date" column to datetime format
+            pdv_df['Date'] = pd.to_datetime(pdv_df['Date'])
 
-            # Compter la fréquence des types d'activités
-            activity_counts = df_last_month["Activity"].value_counts().reset_index()
-            activity_counts.columns = ["Activity", "Count"]
+            # Check that we have data
+            if not pdv_df.empty:
+                fig4 = go.Figure()
 
-            # Créer le pie chart avec Plotly
-            fig = px.pie(activity_counts, values="Count", names="Activity", title="Répartition des activités sur le mois passé")
+                # Plot each PDV variable
+                for pdv_variable in pdv_max_values.keys():
+                    fig4.add_trace(go.Scatter(
+                        x=pdv_df['Date'],
+                        y=pdv_df[pdv_variable],
+                        mode='lines+markers',
+                        name=pdv_variable.replace('_', ' ').title()
+                    ))
 
-            # Afficher le graphique dans Streamlit
-            st.plotly_chart(fig)
-                
+                # Horizontal line at 100 to represent the goal
+                fig4.add_trace(go.Scatter(
+                    x=pdv_df['Date'],
+                    y=[100] * len(pdv_df),
+                    mode='lines',
+                    name="Goal (100%)",
+                    line=dict(color='gray', dash='dash'),
+                ))
+
+                fig4.update_layout(
+                    title="Daily Temporal PDV Values",
+                    xaxis_title="Date",
+                    yaxis_title="PDV (%)",
+                    showlegend=True
+                )
+
+                st.plotly_chart(fig4)               
 
 
     # Get today's activities and calories burned
@@ -233,85 +254,41 @@ def show():
 
         st.plotly_chart(fig2)
 
+    # Récupération des activités
+    username = st.session_state["user"]
+    activity_data = get_activities(username)
 
+    # Convertir les données en DataFrame
+    df_activities = pd.DataFrame(activity_data, columns=["Activity", "Start Time", "Calories", "BMR Calories", "Steps"])
+    df_activities["Start Time"] = pd.to_datetime(df_activities["Start Time"], errors='coerce')
 
-    # Layout: Create two columns for the two graphs
-    col1, col2 = st.columns(2)
+    # Filtrer les activités depuis le début
+    df_last_month = df_activities
 
-    # First column (Weight and BMI)
-    with col1:
-            # PDV Temporal Graph using Plotly
-        st.write("**PDV Temporal Graph**")
+    # Compter la fréquence des types d'activités
+    activity_counts = df_last_month["Activity"].value_counts().reset_index()
+    activity_counts.columns = ["Activity", "Count"]
 
-        # Prepare a DataFrame for PDV data
-        pdv_df = pd.DataFrame(pdv_today, columns=[
-            'total_fat_PDV', 'sugar_PDV', 'sodium_PDV', 'protein_PDV', 
-            'saturated_fat_PDV', 'carbohydrates_PDV', 'some_other_variable', 'Date'
-        ])
+    # Créer le pie chart avec Plotly
+    fig = px.pie(activity_counts, values="Count", names="Activity", title="Répartition des activités sur le mois passé")
 
-        # Convert the "Date" column to datetime format
-        pdv_df['Date'] = pd.to_datetime(pdv_df['Date'])
+    # Mettre le texte au centre et ajuster la légende en bas
+    fig.update_traces(textinfo='percent+label', textposition='inside')
 
-        # Check that we have data
-        if not pdv_df.empty:
-            fig4 = go.Figure()
+    # Ajuster la légende
+    fig.update_layout(
+        title="Répartition des activités sur le mois passé",
+        title_x=0.44,  # Centre le titre
+        legend=dict(
+            orientation="h",  # Légende horizontale
+            x=0.5,  # Centre la légende
+            xanchor="center",
+            y=-0.2  # Ajuste la position sous le graphique
+        )
+    )
+    # Afficher le graphique dans Streamlit
+    st.plotly_chart(fig)
 
-            # Plot each PDV variable
-            for pdv_variable in pdv_max_values.keys():
-                fig4.add_trace(go.Scatter(
-                    x=pdv_df['Date'],
-                    y=pdv_df[pdv_variable],
-                    mode='lines+markers',
-                    name=pdv_variable.replace('_', ' ').title()
-                ))
-
-            # Horizontal line at 100 to represent the goal
-            fig4.add_trace(go.Scatter(
-                x=pdv_df['Date'],
-                y=[100] * len(pdv_df),
-                mode='lines',
-                name="Goal (100%)",
-                line=dict(color='gray', dash='dash'),
-            ))
-
-            fig4.update_layout(
-                title="Daily Temporal PDV Values",
-                xaxis_title="Date",
-                yaxis_title="PDV (%)",
-                showlegend=True
-            )
-
-            st.plotly_chart(fig4)
-
-   
-    # Second column (Activity calories)
-    with col2:
-        df_activities = pd.DataFrame(activity_data, columns=["Activity", "Start Time", "Calories", "BMR Calories", "Steps"])
-        df_activities["Start Time"] = pd.to_datetime(df_activities["Start Time"], errors='coerce')
-
-        if df_activities.empty:
-            st.write("No activity data available.")
-        else:
-            fig3 = go.Figure()
-
-            # Plot activity calories
-            fig3.add_trace(go.Scatter(
-                x=df_activities["Start Time"],
-                y=df_activities["Calories"],
-                mode='lines+markers',
-                name="Calories Burned",
-                line=dict(color='green'),
-                marker=dict(symbol='circle')
-            ))
-
-            fig3.update_layout(
-                title="Activity Calories Burned",
-                xaxis_title="Date",
-                yaxis_title="Calories Burned",
-                showlegend=True
-            )
-
-            st.plotly_chart(fig3)
 
     if "user" not in st.session_state or not st.session_state["user"]:
             st.warning("You must be logged in to access this page.")
