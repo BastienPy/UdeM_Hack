@@ -186,21 +186,29 @@ def show():
                 top_recipes = matching_recipes.head(10)  # Limit to top 10 recipes
                 st.session_state.matching_recipes = top_recipes  # Save recipes in session state
                 st.write(f"Found a top-{len(top_recipes)} matching recipes!")
-
-    else:
-        st.warning("Please select at least one ingredient.")
+            else:
+                st.warning("Please select at least one ingredient.")
         
 
     # Check if matching_recipes is not empty
     # Check if matching_recipes is not empty
     if len(st.session_state.matching_recipes) > 0:
+        grade_emoji = {
+                "A": "🟢 A",
+                "B": "🟡 B",
+                "C": "🟠 C",
+                "D": "🟣 D",
+                "E": "🔴 E",
+            }
         for _, recipe in st.session_state.matching_recipes.iterrows():
             # Création de colonnes pour mieux organiser l'affichage
             col1, col2 = st.columns([2, 1])  # 2/3 pour image + infos, 1/3 pour ingrédients
 
+            grade = recipe["grade"]
+
             with col1:
                 # Lien cliquable sur l'image
-                st.write(f"🍽️ **{recipe['name']}**")
+                st.write(f"🍽️ **{recipe['name']} {grade_emoji[grade]}**")
                 image_url = get_food_image_url(recipe["id"])  # Accessing the recipe's ID
                 if image_url:
                     recipe_url = f"https://www.food.com/recipe/{recipe['name'].lower().replace(' ', '-')}-{recipe['id']}"  # Génère le lien vers la recette
