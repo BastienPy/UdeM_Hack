@@ -14,8 +14,29 @@ import matplotlib.dates as mdates
 
 
 def show():
-    st.title("📊 Dashboard")
-    
+
+    st.markdown(
+        """
+        <style>
+        .center-text {
+            text-align: center;
+            font-size: 26px !important; /* This affects all nested elements unless overridden */
+            font-weight: bold;
+            color: white;
+        }
+        .highlight {
+            color: #006200 !important; /* Only color is changed for highlighted text */
+        }
+        </style>
+        <div class="center-text">
+            <h2><span class="highlight">NutriSnap</span> - Your Smart Nutrition Assistant !</h2>
+            <p>Scan your fridge, get healthy recipes, track your nutrition, and receive personalized coaching—all in one app!</p>
+            <br>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+        
     username = st.session_state['user']
     user_info = get_user(username)
     

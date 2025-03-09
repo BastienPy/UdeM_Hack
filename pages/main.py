@@ -83,6 +83,11 @@ if "authenticated" not in st.session_state:
     st.session_state["user"] = None
 
 if st.session_state["authenticated"]:
+    
+    # Afficher le logo dans la barre latérale avec une taille ajustée
+    st.sidebar.image("logo.png", width=180)  # Ajustez la largeur (par exemple, 150 pixels)
+    ## mettre le logo centre sur la sidebar
+
     with st.sidebar:
         st.markdown(f"**Logged in as:** {st.session_state['user']}")
         page = option_menu(

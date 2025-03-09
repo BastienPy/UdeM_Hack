@@ -122,10 +122,9 @@ def show():
         
         # Display the annotated uploaded image with bounding boxes
         if os.path.exists(annotated_image_path):
-            st.image(annotated_image_path, caption="Annotated Fridge Image (Uploaded)", use_container_width=True)
+            st.image(annotated_image_path, caption="Annotated Fridge Image (Uploaded)", width=450)
         else:
             st.write("No image processed. Something went wrong during the analysis.")
-
 
 
     # --- Ingredient Selection (Fixed List of 30) ---
