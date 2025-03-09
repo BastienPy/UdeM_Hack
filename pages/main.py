@@ -4,7 +4,7 @@ import bcrypt
 import os
 from streamlit_option_menu import option_menu
 
-USER_FILE = "users.json"
+USER_FILE = "data/users.json"
 
 def load_users():
     if os.path.exists(USER_FILE):
@@ -58,6 +58,7 @@ def register():
                 st.session_state["authenticated"] = True
                 st.session_state["user"] = new_username
                 st.rerun()
+                st.warning("Please fill in your personal information on the 'Personal Information' page.")
 
 def logout():
     st.session_state["authenticated"] = False
