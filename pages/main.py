@@ -62,7 +62,14 @@ def register():
                 st.error("❌ Passwords do not match")
             else:
                 success = register_user(new_username, new_password, birth_date, height, weight, gender, garmin_id, garmin_password)
+                ## ajoute add_poids avec l'id de l'utilisateur celui ajoute precedement avec register user
                 if success:
+                    user = get_user(new_username)  # Récupérer l'utilisateur enregistré
+                    if user:  # Vérifier que l'utilisateur a bien été ajouté
+                        user_id = user[0]  # Supposons que l'ID utilisateur est stocké en première colonne de la table
+                        from helpers.database import add_poids  # Import de la fonction d'ajout du poids
+                        add_poids(user_id, weight)  # Ajout des informations du poids
+
                     st.session_state["authenticated"] = True
                     st.session_state["user"] = new_username
                     st.session_state["success_message"] = "✅ Account successfully created"

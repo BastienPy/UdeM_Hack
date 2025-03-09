@@ -1,6 +1,6 @@
 import sqlite3
 import bcrypt
-from datetime import datetime
+from datetime import date
 
 DB_FILE = "data/users.db"
 
@@ -9,6 +9,7 @@ def init_db():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
 
+    
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,9 +35,79 @@ def init_db():
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     )
     """)
+    
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS poids (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        poid REAL,
+        date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+    """)
+    
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS pdv (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        calories REAL,
+        total_fat_PDV REAL,
+        sugar_PDV REAL,
+        sodium_PDV REAL,
+        protein_PDV REAL,
+        saturated_fat_PDV REAL,
+        carbohydrates_PDV REAL,
+        date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+    """)
 
     conn.commit()
     conn.close()
+
+def add_poids(user_id, poid):
+    """Ajoute une nouvelle entrée de poids pour un utilisateur"""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT INTO poids (user_id, poid, date) VALUES (?, ?, ?)
+    """, (user_id, poid, date.today()))
+    conn.commit()
+    conn.close()
+
+def get_poids(user_id):
+    """Récupère l'historique de poids d'un utilisateur"""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT poid, date FROM poids WHERE user_id = ? ORDER BY date DESC
+    """, (user_id,))
+    poids = cursor.fetchall()  
+    conn.close()
+    return poids    
+
+def add_pdv(user_id, calories, total_fat_PDV, sugar_PDV, sodium_PDV, protein_PDV, saturated_fat_PDV, carbohydrates_PDV):
+    """Ajoute une entrée de pourcentage de valeurs nutritionnelles"""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT INTO pdv (user_id, calories, total_fat_PDV, sugar_PDV, sodium_PDV, protein_PDV, saturated_fat_PDV, carbohydrates_PDV, date)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (user_id, calories, total_fat_PDV, sugar_PDV, sodium_PDV, protein_PDV, saturated_fat_PDV, carbohydrates_PDV, date.today()))
+    conn.commit()
+    conn.close()
+
+def get_pdv(user_id):
+    """Récupère les valeurs nutritionnelles pour un utilisateur"""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT calories, total_fat_PDV, sugar_PDV, sodium_PDV, protein_PDV, saturated_fat_PDV, carbohydrates_PDV, date 
+    FROM pdv WHERE user_id = ? ORDER BY date DESC
+    """, (user_id,))
+    pdv_data = cursor.fetchall()
+    conn.close()
+    return pdv_data
 
 def hash_password(password):
     """Hash le mot de passe"""
@@ -66,7 +137,7 @@ def register_user(username, password, birth_date, height, weight, gender, garmin
         return False  # L'utilisateur existe déjà
     finally:
         conn.close()
-
+        
 def get_user(username):
     """Récupère les infos d'un utilisateur par son username"""
     conn = sqlite3.connect(DB_FILE)
@@ -86,10 +157,8 @@ def add_activity(username, activity_name, start_time, calories, steps):
 
     if user:
         user_id = user[0]
-        cursor.execute("""
-        INSERT INTO activities (user_id, activity_name, start_time, calories, steps) 
-        VALUES (?, ?, ?, ?, ?)""",
-        (user_id, activity_name, start_time, calories, steps))
+        cursor.execute("INSERT INTO activities (user_id, activity_name, start_time, calories, steps) VALUES (?, ?, ?, ?, ?)",
+                       (user_id, activity_name, start_time, calories, steps))
         conn.commit()
     conn.close()
 
@@ -109,18 +178,15 @@ def get_activities(username):
     conn.close()
     return activities
 
-def update_user_info(username, birth_date=None, weight=None, height=None, gender=None, garmin_id=None, garmin_password=None):
+def update_user_info(username, weight=None, height=None, age=None, gender=None, garmin_id=None, garmin_password=None):
     """Met à jour les informations de l'utilisateur"""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    
     garmin_password_hash = hash_password(garmin_password) if garmin_password else None
-    
     cursor.execute("""
     UPDATE users 
-    SET birth_date = ?, weight = ?, height = ?, gender = ?, garmin_id = ?, garmin_password = ?
+    SET weight = ?, height = ?, age = ?, gender = ?, garmin_id = ?, garmin_password = ?
     WHERE username = ?
-    """, (birth_date.strftime('%Y-%m-%d') if birth_date else None, weight, height, gender, garmin_id, garmin_password_hash, username))
-    
+    """, (weight, height, age, gender, garmin_id, garmin_password_hash, username))
     conn.commit()
     conn.close()
