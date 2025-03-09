@@ -95,7 +95,7 @@ if st.session_state["authenticated"]:
             "Navigation Bar",
             ["Dashboard", "Alimentation", "Personal Information", "View Database", "Coach"],
             icons=['house', 'apple', 'info-circle', 'database', 'chat'],
-            menu_icon="cast",
+            menu_icon="",
             default_index=0,
         )
         
