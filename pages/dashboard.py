@@ -1,15 +1,15 @@
 import streamlit as st
-from helpers.database import add_activity, get_user, get_garmin_id
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Import helper functions from our CSV-based recommendation module.
+from helpers.database import add_activity, get_user, get_garmin_id, get_poids, get_activities, get_pdv
 
 import pandas as pd
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-# Import helper functions from our CSV-based recommendation module.
-from helpers.database import get_poids, get_user, get_activities, get_pdv
+
 
 def show():
     st.title("📊 Dashboard")
