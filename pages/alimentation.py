@@ -200,6 +200,7 @@ def show():
 
             with col1:
                 # Lien cliquable sur l'image
+                st.write(f"🍽️ **{recipe['name']}**")
                 image_url = get_food_image_url(recipe["id"])  # Accessing the recipe's ID
                 if image_url:
                     recipe_url = f"https://www.food.com/recipe/{recipe['name'].lower().replace(' ', '-')}-{recipe['id']}"  # Génère le lien vers la recette
