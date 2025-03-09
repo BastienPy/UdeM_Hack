@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 # Import helper functions from our CSV-based recommendation module.
-from helpers.database import get_user, add_pdv  # to fetch user info (as used in informations.py)
+from helpers.database import get_user, add_pdv, get_calories  # to fetch user info (as used in informations.py)
 from helpers.recipe_recommandation import propose_recipes, get_food_image_url
 
 import streamlit as st
@@ -41,9 +41,10 @@ def calculate_bmr(weight, height, age, gender):
         return 10 * weight + 6.25 * height - 5 * age - 161
 
 
-def get_daily_calories_from_garmin():
+def get_daily_calories_from_garmin(user_id):
     """Dummy function simulating daily calories burned from a Garmin API."""
-    return 300
+
+    return get_calories(user_id)
 
 def show():
     st.title("Show me the Food! I'll tell you what to eat 🍔🥗")
@@ -150,7 +151,21 @@ def show():
     # --- Nutritional Calculations ---
     st.header("Nutritional Needs")
     bmr = calculate_bmr(weight, height, age, gender)
-    daily_calories_burned = get_daily_calories_from_garmin()
+
+    user = get_user(username)
+
+    if not user:
+        st.error("User not found.")
+        return
+    
+    if user:  # Vérifier que l'utilisateur a bien été ajouté
+        user_id = user[0]
+
+    daily_calories = get_daily_calories_from_garmin(user_id)
+    if daily_calories:
+        daily_calories_burned = daily_calories[0]
+    else:
+        daily_calories_burned = 0
     tdee = bmr + daily_calories_burned
     # Create a DataFrame for the nutritional information
     nutritional_data = {
