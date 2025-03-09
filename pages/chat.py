@@ -2,11 +2,16 @@ import streamlit as st
 import openai
 import sqlite3
 from datetime import datetime
+import os
+from dotenv import load_dotenv
 
-import streamlit as st
-import openai
-import sqlite3
-from datetime import datetime
+
+# Charger les variables d'environnement
+load_dotenv()
+
+# Vérifier si la clé API est bien récupérée
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
 
 DB_FILE = "data/users.db"
 
@@ -65,7 +70,7 @@ def get_last_activities(username):
 
 def show():
     # Configuration de l'API OpenAI
-    client = openai.Client(api_key="OPENAI_API_KEY")
+    client = openai.Client(api_key=OPENAI_API_KEY)
     
     st.title("🥗 Your Personal Coach 🤖")
 
