@@ -2,7 +2,7 @@ import streamlit as st
 import json
 import os
 
-USER_FILE = "users.json"
+USER_FILE = "data/users.json"
 
 def load_users():
     if os.path.exists(USER_FILE):
