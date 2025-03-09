@@ -10,7 +10,7 @@ from streamlit_option_menu import option_menu
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from helpers.database import init_db, register_user, get_user, verify_password,add_poids
+from helpers.database import init_db, register_user, get_user, verify_password, add_poids
 
 # Initialisation de la base de données SQLite
 init_db()
@@ -87,10 +87,11 @@ if "authenticated" not in st.session_state:
 
 if st.session_state["authenticated"]:
     with st.sidebar:
+        st.markdown(f"**Logged in as:** {st.session_state['user']}")
         page = option_menu(
             "Navigation Bar",
-            ["Dashboard", "Alimentation", "Personal Information", "View Database","Coach"],
-            icons=['house', 'apple', 'info-circle', 'database','chat'],
+            ["Dashboard", "Alimentation", "Personal Information", "View Database", "Coach"],
+            icons=['house', 'apple', 'info-circle', 'database', 'chat'],
             menu_icon="cast",
             default_index=0,
         )
