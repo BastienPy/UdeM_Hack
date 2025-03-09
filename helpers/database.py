@@ -3,6 +3,7 @@ import bcrypt
 from datetime import date
 import json
 from garminconnect import Garmin
+import datetime
 
 
 DB_FILE = "data/users.db"
@@ -284,3 +285,15 @@ def update_user_info(username, birth_date=None, weight=None, height=None,  gende
     conn.close()
     
     return True
+
+def get_calories(user_id):
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    today = date.today().strftime('%Y-%m-%d')
+    cursor.execute("""
+    SELECT calories FROM activities WHERE user_id = ? AND DATE(start_time) = ?
+    """, (user_id, today))
+    calories = cursor.fetchone()
+    conn.close()
+    print("CALORIES", calories)
+    return calories

@@ -185,7 +185,7 @@ def show():
     # Calories burned today graph using Plotly
     #st.write("**Calories burned today**")
     # Set a reasonable daily calorie goal
-    calorie_goal = 2000  # Change this based on user or recommendation
+    calorie_goal = 1692  # Change this based on user or recommendation
     calorie_progress = total_calories_today / calorie_goal * 100
 
     col1, col2 = st.columns(2)
@@ -218,9 +218,9 @@ def show():
             # Ajouter une ligne horizontale pour l'objectif journalier de 2000 calories
             fig1.add_trace(go.Scatter(
                 x=daily_calories["Date"],
-                y=[2000] * len(daily_calories),
+                y=[calorie_goal] * len(daily_calories),
                 mode='lines',
-                name="Goal (2000 kcal)",
+                name=f"Goal ({calorie_goal} kcal)",
                 line=dict(color='gray', dash='dash'),
             ))
 
