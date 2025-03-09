@@ -2,15 +2,15 @@ import streamlit as st
 import pandas as pd
 import sys
 import os
+import chat, informations, activite, alimentation, visu, dashboard
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 st.set_page_config(layout="wide")
 
 from streamlit_option_menu import option_menu
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from helpers.database import init_db, register_user, get_user, verify_password, add_poids
+from helpers.database import init_db, register_user, get_user, verify_password,add_poids
 
 # Initialisation de la base de données SQLite
 init_db()
@@ -68,7 +68,7 @@ def register():
                     if user:  # Vérifier que l'utilisateur a bien été ajouté
                         user_id = user[0]  # Supposons que l'ID utilisateur est stocké en première colonne de la table
                         add_poids(user_id, weight)  # Ajout des informations du poids
-
+                        
                     st.session_state["authenticated"] = True
                     st.session_state["user"] = new_username
                     st.session_state["success_message"] = "✅ Account successfully created"
@@ -89,8 +89,8 @@ if st.session_state["authenticated"]:
     with st.sidebar:
         page = option_menu(
             "Navigation Bar",
-            ["Dashboard", "Alimentation", "Activity", "Personal Information", "View Database"],
-            icons=['house', 'utensils', 'running', 'info-circle', 'database'],
+            ["Dashboard", "Alimentation", "Activity", "Personal Information", "View Database","Coach"],
+            icons=['house', 'utensils', 'running', 'info-circle', 'database','chat'],
             menu_icon="cast",
             default_index=0,
         )
@@ -99,20 +99,18 @@ if st.session_state["authenticated"]:
             logout()
 
     if page == "Dashboard":
-        import dashboard
         dashboard.show()
     elif page == "Alimentation":
-        import alimentation
         alimentation.show()
     elif page == "Activity":
-        import activite
         activite.show()
     elif page == "Personal Information":
-        import informations
         informations.show()
     elif page == "View Database":
-        import visu
         visu.show()
+    elif page == "Coach":
+        import chat
+        chat.show()
 else:
     st.markdown("""
         <style>
