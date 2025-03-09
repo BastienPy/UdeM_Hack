@@ -2,8 +2,12 @@ import streamlit as st
 
 st.set_page_config(layout="wide")
 
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from streamlit_option_menu import option_menu
-from database import init_db, register_user, get_user, verify_password
+from helpers.database import init_db, register_user, get_user, verify_password
 
 # Initialisation de la base de données SQLite
 init_db()

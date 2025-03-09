@@ -1,0 +1,19 @@
+Nutri-Score Statistics:
+count    231637.000000
+mean         11.623480
+std           8.051025
+min          -5.000000
+25%           5.000000
+50%          11.000000
+75%          17.000000
+max          40.000000
+Name: nutriscore, dtype: float64
+
+Grade Distribution:
+grade
+C    78509
+D    73445
+E    46593
+B    24360
+A     8730
+Name: count, dtype: int64
