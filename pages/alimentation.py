@@ -5,15 +5,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from helpers.database import get_user  # to fetch user info (as used in informations.py)
 from helpers.recipe_recommandation import propose_recipes, get_food_image_url
 
-
 import streamlit as st
 import pandas as pd
 from PIL import Image
-import requests
-from io import BytesIO
-from transformers import CLIPProcessor, CLIPModel
 
-# Load the CSV data for use in the app (e.g., to build the full ingredient list).
+# Import our YOLO-based fridge analysis function from our custom module.
+from helpers.food_detection import analyse_frigo
+
+# Load the CSV data for use in the app.
 food_data = pd.read_csv(r'data/processed_recipes_with_categories.csv')
 
 def calculate_bmr(weight, height, age, gender):
@@ -26,30 +25,6 @@ def calculate_bmr(weight, height, age, gender):
 def get_daily_calories_from_garmin():
     """Dummy function simulating daily calories burned from a Garmin API."""
     return 300
-
-def analyze_fridge_image(image):
-    """
-    Uses a zero-shot CLIP model to detect ingredients from an image.
-    Returns a list of detected ingredients.
-    """
-    try:
-        model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14-336")
-        processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14-336")
-        possible_ingredients = ["chicken", "lettuce", "tomato", "cucumber", "pasta",
-                                "bell pepper", "zucchini", "egg", "mushroom", "cheese", "banana"]
-        inputs = processor(text=possible_ingredients, images=image, return_tensors="pt", padding=True)
-        outputs = model(**inputs)
-        logits_per_image = outputs.logits_per_image
-        probs = logits_per_image.softmax(dim=1)
-        detected = []
-        for i, prob in enumerate(probs[0]):
-            if prob > 0.1:
-                detected.append(possible_ingredients[i])
-        return detected
-    except Exception as e:
-        st.error(f"CLIP model error: {e}")
-        # Fallback ingredients if model fails.
-        return ["chicken", "tomato", "lettuce"]
 
 def show():
     st.title("Enhanced AI Nutritionist (CSV-Based)")
@@ -65,7 +40,6 @@ def show():
     weight = user[3] if user[3] else 70.0
     height = user[4] if user[4] else 175.0
     age = user[5] if user[5] else 30
-    # Default gender is assumed as "Male" (modify if you add gender data)
     gender = "Male"
     
     # --- Fridge Scanner Section ---
@@ -73,10 +47,18 @@ def show():
     uploaded_image = st.file_uploader("Upload an image of your fridge", type=["jpg", "jpeg", "png"])
     detected_ingredients = []
     if uploaded_image is not None:
-        image = Image.open(uploaded_image)
-        st.image(image, caption="Uploaded Fridge Image", use_column_width=True)
-        detected_ingredients = analyze_fridge_image(image)
+        # Save the uploaded image to disk as a temporary file.
+        temp_image_path = os.path.join("data", "fridge_images", "temp_uploaded.jpg")
+        with open(temp_image_path, "wb") as f:
+            f.write(uploaded_image.read())
+        
+        # Analyze the saved image using the YOLO model.
+        detected_ingredients = analyse_frigo(temp_image_path)
         st.write("Detected ingredients:", detected_ingredients)
+        
+        # Display the annotated image saved by the model.
+        annotated_image_path = os.path.join("data", "fridge_images", "output", os.path.basename(temp_image_path))
+        st.image(annotated_image_path, caption="Annotated Fridge Image", use_column_width=True)
     else:
         st.write("No image uploaded. You can manually select the ingredients.")
 
@@ -89,15 +71,14 @@ def show():
     manual_selection = st.multiselect(
         "Or select ingredients available in your fridge",
         all_possible_ingredients,
-        default=detected_ingredients
+        default=list(detected_ingredients)
     )
-    selected_ingredients = manual_selection if manual_selection else detected_ingredients
+    selected_ingredients = manual_selection if manual_selection else list(detected_ingredients)
 
     # --- Nutritional Calculations ---
     st.header("Nutritional Needs")
     bmr = calculate_bmr(weight, height, age, gender)
     daily_calories_burned = get_daily_calories_from_garmin()
-    # Let the user select activity intensity via radio buttons.
     intensity = st.radio("Select Activity Intensity", ["Low", "Moderate", "High"], index=0)
     st.write(f"BMR: {bmr:.0f} calories/day")
     st.write(f"Daily calories burned (simulated Garmin): {daily_calories_burned} calories")
