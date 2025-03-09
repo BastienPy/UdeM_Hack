@@ -290,14 +290,14 @@ def show():
     activity_counts.columns = ["Activity", "Count"]
 
     # Créer le pie chart avec Plotly
-    fig = px.pie(activity_counts, values="Count", names="Activity", title="Répartition des activités sur le mois passé")
+    fig = px.pie(activity_counts, values="Count", names="Activity", title="Breakdown of Activities Over the Past Month")
 
     # Mettre le texte au centre et ajuster la légende en bas
     fig.update_traces(textinfo='percent+label', textposition='inside')
 
     # Ajuster la légende
     fig.update_layout(
-        title="Répartition des activités sur le mois passé",
+        title="Breakdown of Activities Over the Past Month",
         title_x=0.44,  # Centre le titre
         legend=dict(
             orientation="h",  # Légende horizontale

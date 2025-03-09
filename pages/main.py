@@ -92,8 +92,8 @@ if st.session_state["authenticated"]:
         st.markdown(f"**Logged in as:** {st.session_state['user']}")
         page = option_menu(
             "Navigation Bar",
-            ["Dashboard", "Alimentation", "Personal Information", "View Database", "Coach"],
-            icons=['house', 'apple', 'info-circle', 'database', 'chat'],
+            ["Dashboard", "Alimentation", "Personal Information", "Coach"],
+            icons=['house', 'apple', 'info-circle', 'chat'],
             menu_icon="",
             default_index=0,
         )
@@ -107,8 +107,6 @@ if st.session_state["authenticated"]:
         alimentation.show()
     elif page == "Personal Information":
         informations.show()
-    elif page == "View Database":
-        visu.show()
     elif page == "Coach":
         import chat
         chat.show()
