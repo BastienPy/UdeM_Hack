@@ -58,7 +58,7 @@ def register():
             with col1:
                 garmin_id = st.text_input("Garmin ID", key="register_garmin_id")
             with col2:
-                garmin_password = st.text_input("Garmin Password", type="password", key="register_garmin_pass")
+                garmin_password = st.text_input("Garmin Password", key="register_garmin_pass")
         if st.button("Register", use_container_width=True):
             if new_password != confirm_password:
                 st.error("❌ Passwords do not match")

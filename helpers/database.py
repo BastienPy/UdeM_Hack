@@ -19,10 +19,10 @@ def init_db():
     # WHERE id = 8 OR id = 9
     # """)
 
-    #detele table activities
-    # cursor.execute("""
-    # DROP TABLE IF EXISTS activities
-    # """)
+    # detele table activities
+    cursor.execute("""
+    DROP TABLE IF EXISTS activities
+    """)
 
 
     cursor.execute("""
@@ -233,39 +233,6 @@ def get_user(username):
     conn.close()
     return user
 
-def add_activity(username, activity_name, start_time, calories, steps):
-    """Ajoute une activité à un utilisateur"""
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
-    user = cursor.fetchone()
-
-    if user:
-        user_id = user[0]
-        cursor.execute("INSERT INTO activities (user_id, activity_name, start_time, calories, steps) VALUES (?, ?, ?, ?, ?)",
-                       (user_id, activity_name, start_time, calories, steps))
-        conn.commit()
-    conn.close()
-
-def get_activities(username):
-    """Récupère toutes les activités d'un utilisateur"""
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    SELECT activity_name, start_time, calories, steps 
-    FROM activities 
-    JOIN users ON activities.user_id = users.id 
-    WHERE users.username = ?
-    """, (username,))
-
-    activities = cursor.fetchall()
-    conn.close()
-    return activities
-
-def update_user_info(username, birth_date=None, weight=None, height=None, gender=None, garmin_id=None, garmin_password=None):
-    """Met à jour les informations de l'utilisateur uniquement pour les champs fournis"""
 def update_user_info(username, weight=None, height=None, birth_date=None, gender=None, garmin_id=None, garmin_password=None):
     """Met à jour les informations de l'utilisateur"""
     conn = sqlite3.connect(DB_FILE)
