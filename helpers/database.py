@@ -1,5 +1,6 @@
 import sqlite3
 import bcrypt
+from datetime import datetime
 
 DB_FILE = "data/users.db"
 
@@ -13,13 +14,12 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
+        birth_date TEXT,
         weight REAL,
         height REAL,
-        age INTEGER,
-        gender TEXT CHECK(gender IN ('H', 'F')),
-        garmin_id TEXT,
-        garmin_password TEXT,
-        admin INTEGER DEFAULT 0
+        gender TEXT CHECK(gender IN ('M', 'F')),
+        garmin_id TEXT DEFAULT NULL,
+        garmin_password TEXT DEFAULT NULL
     )
     """)
 
@@ -46,16 +46,20 @@ def verify_password(password, hashed_password):
     """Vérifie si le mot de passe correspond au hash"""
     return bcrypt.checkpw(password.encode(), hashed_password.encode())
 
-def register_user(username, password, gender, garmin_password, admin=0):
-    """Ajoute un utilisateur dans la base"""
+def register_user(username, password, birth_date, height, weight, gender, garmin_id=None, garmin_password=None):
+    """Ajoute un utilisateur dans la base avec les nouvelles données"""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
 
     try:
         password_hash = hash_password(password)
-        garmin_password_hash = hash_password(garmin_password)
-        cursor.execute("INSERT INTO users (username, password_hash, gender, garmin_password, admin) VALUES (?, ?, ?, ?, ?)", 
-                       (username, password_hash, gender, garmin_password_hash, admin))
+        garmin_password_hash = hash_password(garmin_password) if garmin_password else None
+        
+        cursor.execute("""
+        INSERT INTO users (username, password_hash, birth_date, height, weight, gender, garmin_id, garmin_password) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (username, password_hash, birth_date.strftime('%Y-%m-%d'), height, weight, gender, garmin_id, garmin_password_hash))
+        
         conn.commit()
         return True
     except sqlite3.IntegrityError:
@@ -82,8 +86,10 @@ def add_activity(username, activity_name, start_time, calories, steps):
 
     if user:
         user_id = user[0]
-        cursor.execute("INSERT INTO activities (user_id, activity_name, start_time, calories, steps) VALUES (?, ?, ?, ?, ?)",
-                       (user_id, activity_name, start_time, calories, steps))
+        cursor.execute("""
+        INSERT INTO activities (user_id, activity_name, start_time, calories, steps) 
+        VALUES (?, ?, ?, ?, ?)""",
+        (user_id, activity_name, start_time, calories, steps))
         conn.commit()
     conn.close()
 
@@ -103,15 +109,18 @@ def get_activities(username):
     conn.close()
     return activities
 
-def update_user_info(username, weight, height, age, gender, garmin_id, garmin_password, admin):
+def update_user_info(username, birth_date=None, weight=None, height=None, gender=None, garmin_id=None, garmin_password=None):
     """Met à jour les informations de l'utilisateur"""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    garmin_password_hash = hash_password(garmin_password)
+    
+    garmin_password_hash = hash_password(garmin_password) if garmin_password else None
+    
     cursor.execute("""
     UPDATE users 
-    SET weight = ?, height = ?, age = ?, gender = ?, garmin_id = ?, garmin_password = ?, admin = ?
+    SET birth_date = ?, weight = ?, height = ?, gender = ?, garmin_id = ?, garmin_password = ?
     WHERE username = ?
-    """, (weight, height, age, gender, garmin_id, garmin_password_hash, admin, username))
+    """, (birth_date.strftime('%Y-%m-%d') if birth_date else None, weight, height, gender, garmin_id, garmin_password_hash, username))
+    
     conn.commit()
     conn.close()
