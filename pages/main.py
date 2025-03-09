@@ -1,11 +1,4 @@
 import streamlit as st
-
-st.set_page_config(layout="wide")
-
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from streamlit_option_menu import option_menu
 from helpers.database import init_db, register_user, get_user, verify_password
 
@@ -37,22 +30,34 @@ def register():
         new_username = st.text_input("Choose a username", key="register_user")
         new_password = st.text_input("Choose a password", type="password", key="register_pass")
         confirm_password = st.text_input("Confirm password", type="password", key="register_confirm")
-
+        birth_date = st.date_input("Date of Birth", key="register_birthdate")
+        height = st.number_input("Height (cm)", min_value=50, max_value=250, step=1, key="register_height")
+        weight = st.number_input("Weight (kg)", min_value=20, max_value=300, step=1, key="register_weight")
+        gender = st.radio("Gender", ["M", "F"], key="register_gender")
+        
+        has_garmin = st.checkbox("I have a Garmin watch", key="register_has_garmin")
+        
+        garmin_id = None
+        garmin_password = None
+        if has_garmin:
+            garmin_id = st.text_input("Garmin ID", key="register_garmin_id")
+            garmin_password = st.text_input("Garmin Password", type="password", key="register_garmin_pass")
+        
         if st.button("Register", use_container_width=True):
             if new_password != confirm_password:
                 st.error("❌ Passwords do not match")
-            elif register_user(new_username, new_password):
-                st.session_state["authenticated"] = True
-                st.session_state["user"] = new_username
-                st.session_state["success_message"] = "✅ Account successfully created"
-                st.rerun()
             else:
-                st.error("❌ Username already taken")
+                success = register_user(new_username, new_password, birth_date, height, weight, gender, garmin_id, garmin_password)
+                if success:
+                    st.session_state["authenticated"] = True
+                    st.session_state["user"] = new_username
+                    st.session_state["success_message"] = "✅ Account successfully created"
+                    st.rerun()
+                else:
+                    st.error("❌ Username already taken")
 
 def logout():
-    st.session_state["authenticated"] = False
-    st.session_state["user"] = None
-    st.session_state.clear()  # Efface toutes les variables de session
+    st.session_state.clear()
     st.rerun()
 
 # Gestion de session
@@ -69,7 +74,7 @@ if st.session_state["authenticated"]:
             menu_icon="cast",
             default_index=0,
         )
-
+        
         if st.button("🚪 Logout"):
             logout()
 
@@ -85,7 +90,6 @@ if st.session_state["authenticated"]:
     elif page == "Personal Information":
         import informations
         informations.show()
-
 else:
     st.markdown("""
         <style>

@@ -16,7 +16,10 @@ def init_db():
         weight REAL,
         height REAL,
         age INTEGER,
-        garmin_id TEXT
+        gender TEXT CHECK(gender IN ('H', 'F')),
+        garmin_id TEXT,
+        garmin_password TEXT,
+        admin INTEGER DEFAULT 0
     )
     """)
 
@@ -43,14 +46,16 @@ def verify_password(password, hashed_password):
     """Vérifie si le mot de passe correspond au hash"""
     return bcrypt.checkpw(password.encode(), hashed_password.encode())
 
-def register_user(username, password):
+def register_user(username, password, gender, garmin_password, admin=0):
     """Ajoute un utilisateur dans la base"""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
 
     try:
         password_hash = hash_password(password)
-        cursor.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, password_hash))
+        garmin_password_hash = hash_password(garmin_password)
+        cursor.execute("INSERT INTO users (username, password_hash, gender, garmin_password, admin) VALUES (?, ?, ?, ?, ?)", 
+                       (username, password_hash, gender, garmin_password_hash, admin))
         conn.commit()
         return True
     except sqlite3.IntegrityError:
@@ -98,15 +103,15 @@ def get_activities(username):
     conn.close()
     return activities
 
-def update_user_info(username, weight, height, age, garmin_id):
+def update_user_info(username, weight, height, age, gender, garmin_id, garmin_password, admin):
     """Met à jour les informations de l'utilisateur"""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
+    garmin_password_hash = hash_password(garmin_password)
     cursor.execute("""
     UPDATE users 
-    SET weight = ?, height = ?, age = ?, garmin_id = ?
+    SET weight = ?, height = ?, age = ?, gender = ?, garmin_id = ?, garmin_password = ?, admin = ?
     WHERE username = ?
-    """, (weight, height, age, garmin_id, username))
+    """, (weight, height, age, gender, garmin_id, garmin_password_hash, admin, username))
     conn.commit()
     conn.close()
-
