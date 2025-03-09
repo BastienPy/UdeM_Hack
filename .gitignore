@@ -2,6 +2,7 @@
 /data/processed_recipes.csv
 /data/RAW_recipes.csv
 /data/users.db
+.env
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
