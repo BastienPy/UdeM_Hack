@@ -178,15 +178,44 @@ def get_activities(username):
     conn.close()
     return activities
 
-def update_user_info(username, weight=None, height=None, age=None, gender=None, garmin_id=None, garmin_password=None):
-    """Met à jour les informations de l'utilisateur"""
+def update_user_info(username, birth_date=None, weight=None, height=None, gender=None, garmin_id=None, garmin_password=None):
+    """Met à jour les informations de l'utilisateur uniquement pour les champs fournis"""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    garmin_password_hash = hash_password(garmin_password) if garmin_password else None
-    cursor.execute("""
-    UPDATE users 
-    SET weight = ?, height = ?, age = ?, gender = ?, garmin_id = ?, garmin_password = ?
-    WHERE username = ?
-    """, (weight, height, age, gender, garmin_id, garmin_password_hash, username))
+    
+    updates = []
+    values = []
+
+    # S'assurer que l'ordre des champs est correct
+    if birth_date is not None:
+        updates.append("birth_date = ?")
+        values.append(birth_date.strftime('%Y-%m-%d') if isinstance(birth_date, date) else birth_date)
+    if height is not None:
+        updates.append("height = ?")
+        values.append(height)
+    if weight is not None:
+        updates.append("weight = ?")
+        values.append(weight)
+    if gender is not None:
+        updates.append("gender = ?")
+        values.append(gender)
+    if garmin_id is not None:
+        updates.append("garmin_id = ?")
+        values.append(garmin_id)
+    if garmin_password is not None:
+        garmin_password_hash = hash_password(garmin_password)
+        updates.append("garmin_password = ?")
+        values.append(garmin_password_hash)
+
+    if not updates:
+        conn.close()
+        return False  # Rien à mettre à jour
+
+    values.append(username)
+    query = f"UPDATE users SET {', '.join(updates)} WHERE username = ?"
+    
+    cursor.execute(query, values)
     conn.commit()
     conn.close()
+    
+    return True
