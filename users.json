@@ -14,5 +14,13 @@
         "age": null,
         "garmin_id": null,
         "garmin_password": null
+    },
+    "bastien": {
+        "password": "$2b$12$S.B.JLhCzYwWDfABlyE5F.J3oxZRax7noUGFGgjphbviiM1frDZ0i",
+        "weight": null,
+        "height": null,
+        "age": null,
+        "garmin_id": null,
+        "garmin_password": null
     }
 }
