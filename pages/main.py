@@ -19,7 +19,8 @@ init_db()
 
 def login():
     """Affichage du formulaire de connexion"""
-    st.markdown("""<h2 style='text-align: center;'>🔐 Login</h2>""", unsafe_allow_html=True)
+   
+    st.markdown("<h2 style='text-align: center;'>🔑 Login</h2>", unsafe_allow_html=True)    
     col1, col2, col3 = st.columns([1, 3, 1])
     with col2:
         username = st.text_input("Username", key="login_user")
@@ -36,6 +37,7 @@ def login():
 
 def register():
     """Affichage du formulaire d'inscription"""
+
     st.markdown("""<h2 style='text-align: center;'>📝 Register</h2>""", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 3, 1])
     with col2:
@@ -124,14 +126,15 @@ else:
         st.success(st.session_state["success_message"])
         del st.session_state["success_message"]
 
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+    col1, col2, col3, col4, col5 = st.columns([4, 1, 1, 1, 4])
     with col2:
-        if st.button("🔑 Login"):
+        if st.button("🔑Login"):
             st.session_state["option"] = "login"
-    with col3:
-        if st.button("🆕 Register"):
+        if st.button("📝Register"):
             st.session_state["option"] = "register"
-
+    with col3:
+        st.image("logo.png", width=190)  # Ajout du logo en haut avec une largeur réduite
+    
     if st.session_state.get("option", "login") == "login":
         login()
     else:
