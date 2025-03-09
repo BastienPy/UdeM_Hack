@@ -25,8 +25,3 @@ def import_garmin_data(email, password):
         ]
         activities_json = json.dumps(filtered_activities, indent=4)
         json_file.write(activities_json)
-
-mail = "alexis.bord094@gmail.com"
-password = "eUMckMQM94!!"
-
-import_garmin_data(mail, password)
