@@ -1,6 +1,7 @@
 /data/processed_recipes_with_categories.csv
 /data/processed_recipes.csv
 /data/RAW_recipes.csv
+/data/users.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -173,3 +174,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+data/users.db

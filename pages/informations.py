@@ -3,7 +3,7 @@ import streamlit as st
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from helpers.database import get_user, update_user_info
+from helpers.database import get_user, update_user_info, add_poids
 
 def show():
     st.title("📝 Personal Information")
@@ -31,5 +31,5 @@ def show():
 
     if st.button("Save Information"):
         update_user_info(username, birth_date, weight, height, gender, garmin_id, garmin_password)
-        st.session_state["birth_date"] = birth_date
+        add_poids(user[0],weight)
         st.success("✅ Information updated successfully!")

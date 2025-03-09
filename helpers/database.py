@@ -172,7 +172,7 @@ def get_poids(user_id):
     conn.close()
     return poids    
 
-def add_pdv(user_id, calories, total_fat_PDV, sugar_PDV, sodium_PDV, protein_PDV, saturated_fat_PDV, carbohydrates_PDV):
+def add_pdv(user_id, calories, total_fat_PDV=None, sugar_PDV=None, sodium_PDV=None, protein_PDV=None, saturated_fat_PDV=None, carbohydrates_PDV=None):
     """Ajoute une entrée de pourcentage de valeurs nutritionnelles"""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
@@ -233,10 +233,76 @@ def get_user(username):
     conn.close()
     return user
 
+def add_activity(username, activity_name, start_time, calories, steps):
+    """Ajoute une activité à un utilisateur"""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+
+    if user:
+        user_id = user[0]
+        cursor.execute("INSERT INTO activities (user_id, activity_name, start_time, calories, steps) VALUES (?, ?, ?, ?, ?)",
+                       (user_id, activity_name, start_time, calories, steps))
+        conn.commit()
+    conn.close()
+
+def get_activities(username):
+    """Récupère toutes les activités d'un utilisateur"""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT activity_name, start_time, calories, steps 
+    FROM activities 
+    JOIN users ON activities.user_id = users.id 
+    WHERE users.username = ?
+    """, (username,))
+
+    activities = cursor.fetchall()
+    conn.close()
+    return activities
+
+def update_user_info(username, birth_date=None, weight=None, height=None, gender=None, garmin_id=None, garmin_password=None):
+    """Met à jour les informations de l'utilisateur uniquement pour les champs fournis"""
 def update_user_info(username, weight=None, height=None, birth_date=None, gender=None, garmin_id=None, garmin_password=None):
     """Met à jour les informations de l'utilisateur"""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
+    
+    updates = []
+    values = []
+
+    # S'assurer que l'ordre des champs est correct
+    if birth_date is not None:
+        updates.append("birth_date = ?")
+        values.append(birth_date.strftime('%Y-%m-%d') if isinstance(birth_date, date) else birth_date)
+    if height is not None:
+        updates.append("height = ?")
+        values.append(height)
+    if weight is not None:
+        updates.append("weight = ?")
+        values.append(weight)
+    if gender is not None:
+        updates.append("gender = ?")
+        values.append(gender)
+    if garmin_id is not None:
+        updates.append("garmin_id = ?")
+        values.append(garmin_id)
+    if garmin_password is not None:
+        garmin_password_hash = hash_password(garmin_password)
+        updates.append("garmin_password = ?")
+        values.append(garmin_password_hash)
+
+    if not updates:
+        conn.close()
+        return False  # Rien à mettre à jour
+
+    values.append(username)
+    query = f"UPDATE users SET {', '.join(updates)} WHERE username = ?"
+    
+    cursor.execute(query, values)
     garmin_password_hash = hash_password(garmin_password) if garmin_password else None
     cursor.execute("""
     UPDATE users 
@@ -245,3 +311,5 @@ def update_user_info(username, weight=None, height=None, birth_date=None, gender
     """, (weight, height, birth_date, gender, garmin_id, garmin_password_hash, username))
     conn.commit()
     conn.close()
+    
+    return True
