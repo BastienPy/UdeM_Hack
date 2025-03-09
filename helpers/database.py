@@ -13,16 +13,16 @@ def init_db():
     cursor = conn.cursor()
 
     # supprime garmin_id et garmin_password du user 1
-    # cursor.execute("""
-    # UPDATE users
-    # SET weight = 70, birth_date = '2001-06-08'
-    # WHERE id = 8 OR id = 9
-    # """)
+    cursor.execute("""
+    UPDATE users
+    SET weight = 70, birth_date = '2001-06-08'
+    WHERE id = 1
+    """)
 
     # detele table activities
-    cursor.execute("""
-    DROP TABLE IF EXISTS activities
-    """)
+    # cursor.execute("""
+    # DROP TABLE IF EXISTS activities
+    # """)
 
 
     cursor.execute("""
@@ -115,13 +115,17 @@ def add_activity(user_id, garmin_id, garmin_password):
     activities = import_garmin_data(garmin_id, garmin_password)
     if activities is None:
         return False
-    for activity in activities:
-        cursor.execute("""
-        INSERT INTO activities (id, user_id, activity_name, start_time, calories, bmrCalories, steps) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)""", 
-        (activity["id"], user_id, activity["activity_name"], activity["start_time"], activity["calories"], activity["bmrCalories"], activity["steps"]))
+    try:
+        for activity in activities:
+            cursor.execute("""
+            INSERT INTO activities (id, user_id, activity_name, start_time, calories, bmrCalories, steps) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)""", 
+            (activity["id"], user_id, activity["activity_name"], activity["start_time"], activity["calories"], activity["bmrCalories"], activity["steps"]))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        return False
 
-    conn.commit()
     conn.close()
     return True
 
@@ -210,12 +214,12 @@ def register_user(username, password, birth_date, height, weight, gender, garmin
 
     try:
         password_hash = hash_password(password)
-        garmin_password_hash = hash_password(garmin_password) if garmin_password else None
+        #garmin_password_hash = hash_password(garmin_password) if garmin_password else None
         
         cursor.execute("""
         INSERT INTO users (username, password_hash, birth_date, height, weight, gender, garmin_id, garmin_password) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (username, password_hash, birth_date.strftime('%Y-%m-%d'), height, weight, gender, garmin_id, garmin_password_hash))
+        """, (username, password_hash, birth_date.strftime('%Y-%m-%d'), height, weight, gender, garmin_id, garmin_password))
         
         conn.commit()
         return True
@@ -258,9 +262,9 @@ def update_user_info(username, weight=None, height=None, birth_date=None, gender
         updates.append("garmin_id = ?")
         values.append(garmin_id)
     if garmin_password is not None:
-        garmin_password_hash = hash_password(garmin_password)
+        garmin_password_hash = garmin_password
         updates.append("garmin_password = ?")
-        values.append(garmin_password_hash)
+        values.append(garmin_password)
 
     if not updates:
         conn.close()
@@ -270,12 +274,12 @@ def update_user_info(username, weight=None, height=None, birth_date=None, gender
     query = f"UPDATE users SET {', '.join(updates)} WHERE username = ?"
     
     cursor.execute(query, values)
-    garmin_password_hash = hash_password(garmin_password) if garmin_password else None
+    #garmin_password_hash = hash_password(garmin_password) if garmin_password else None
     cursor.execute("""
     UPDATE users 
     SET weight = ?, height = ?, birth_date = ?, gender = ?, garmin_id = ?, garmin_password = ?
     WHERE username = ?
-    """, (weight, height, birth_date, gender, garmin_id, garmin_password_hash, username))
+    """, (weight, height, birth_date, gender, garmin_id, garmin_password, username))
     conn.commit()
     conn.close()
     
