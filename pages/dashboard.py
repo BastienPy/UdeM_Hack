@@ -191,8 +191,8 @@ def show():
 
     # Second column (Activity calories)
     with col2:
-        df_activities = pd.DataFrame(activity_data, columns=["Activity", "Start Time", "Calories", "Steps"])
-        df_activities["Start Time"] = pd.to_datetime(df_activities["Start Time"])
+        df_activities = pd.DataFrame(activity_data, columns=["Activity", "Start Time", "Calories", "BMR Calories", "Steps"])
+        df_activities["Start Time"] = pd.to_datetime(df_activities["Start Time"], errors='coerce')
 
         if df_activities.empty:
             st.write("No activity data available.")

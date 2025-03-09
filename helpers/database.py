@@ -145,7 +145,7 @@ def get_activities(username):
     cursor = conn.cursor()
 
     cursor.execute("""
-    SELECT activity_name, start_time, calories, caloriesBmr, steps 
+    SELECT activity_name, start_time, calories, bmrCalories, steps 
     FROM activities 
     JOIN users ON activities.user_id = users.id 
     WHERE users.username = ?
