@@ -89,8 +89,8 @@ if st.session_state["authenticated"]:
     with st.sidebar:
         page = option_menu(
             "Navigation Bar",
-            ["Dashboard", "Alimentation", "Activity", "Personal Information", "View Database","Coach"],
-            icons=['house', 'utensils', 'running', 'info-circle', 'database','chat'],
+            ["Dashboard", "Alimentation", "Personal Information", "View Database","Coach"],
+            icons=['house', 'apple', 'info-circle', 'database','chat'],
             menu_icon="cast",
             default_index=0,
         )
@@ -102,8 +102,6 @@ if st.session_state["authenticated"]:
         dashboard.show()
     elif page == "Alimentation":
         alimentation.show()
-    elif page == "Activity":
-        activite.show()
     elif page == "Personal Information":
         informations.show()
     elif page == "View Database":

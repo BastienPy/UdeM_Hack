@@ -1,18 +1,77 @@
 import streamlit as st
 import openai
+import sqlite3
+from datetime import datetime
+
+DB_FILE = "data/users.db"
+
+def get_user_info(username):
+    """Récupère les infos de l'utilisateur depuis la base de données."""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT birth_date, weight, height, gender FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+    conn.close()
+
+    if user:
+        birth_date, weight, height, gender = user
+        age = None
+
+        if birth_date and isinstance(birth_date, str):
+            try:
+                birth_date = datetime.strptime(birth_date, "%Y-%m-%d")
+                age = datetime.today().year - birth_date.year
+            except ValueError:
+                st.write("⚠️ Warning: Birth date format is incorrect in the database.")
+
+        return {
+            "age": age if age is not None else "Unknown",
+            "weight": weight if weight is not None else "Unknown",
+            "height": height if height is not None else "Unknown",
+            "gender": "Male" if gender == "M" else "Female" if gender == "F" else "Unknown"
+        }
+    
+
+    return None
+
 
 def show():
     # Configuration de l'API OpenAI (remplace par ta clé API)
     client = openai.Client(api_key="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")
         
-    # Titre de l'application
+   
+# Titre de l'application
     st.title("🥗 Your Personal Nutrition Coach 🤖")
 
     # Initialisation de l'historique des messages
     if "messages" not in st.session_state:
         st.session_state["messages"] = []
 
-    # Liste de questions préenregistrées
+    # Initialisation de la session utilisateur
+    if "user_context" not in st.session_state:
+        st.session_state["user_context"] = ""
+
+    if "first_interaction" not in st.session_state:
+        st.session_state["first_interaction"] = True
+
+    # Récupération des infos utilisateur
+    username = st.session_state.get("user", "guest")
+    user_info = get_user_info(username)
+
+    if user_info:
+        user_context = f"""
+        The user has provided the following personal details:
+        - Age: {user_info['age']} years
+        - Weight: {user_info['weight']} kg
+        - Height: {user_info['height']} cm
+        - Gender: {user_info['gender']}
+        
+        Remember these details and use them for personalized recommendations. 
+        If the user asks for their information later, remind them of what they provided.
+        """
+        st.session_state["user_context"] = user_context
+
+    # Questions préenregistrées
     predefined_questions = [
         "What are the best foods for post-workout recovery?",
         "How to balance meals for optimal performance?",
@@ -25,18 +84,9 @@ def show():
     st.write("### Frequently Asked Questions:")
     col1, col2, col3 = st.columns(3)
     for i, question in enumerate(predefined_questions):
-        if i % 3 == 0:
-            with col1:
-                if st.button(question, key=f"q{i}"):
-                    st.session_state["selected_question"] = question
-        elif i % 3 == 1:
-            with col2:
-                if st.button(question, key=f"q{i}"):
-                    st.session_state["selected_question"] = question
-        else:
-            with col3:
-                if st.button(question, key=f"q{i}"):
-                    st.session_state["selected_question"] = question
+        with [col1, col2, col3][i % 3]:
+            if st.button(question, key=f"q{i}"):
+                st.session_state["selected_question"] = question
 
     # Vérification si une question préenregistrée a été sélectionnée
     selected_prompt = st.session_state.pop("selected_question", None)
@@ -53,11 +103,18 @@ def show():
         with st.chat_message("user"):
             st.markdown(prompt)
         
+        # Définition du contexte système avec mémorisation des infos utilisateur
+        system_context = f"""
+        You are a helpful assistant specialized in nutrition and fitness.
+        {st.session_state.get('user_context', 'User details are unknown.')}
+        Always use the provided information to give personalized responses.
+        """
+
         # Génération de la réponse du chatbot
         with st.chat_message("assistant"):
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "system", "content": "You are a helpful assistant."}] + st.session_state["messages"]
+                messages=[{"role": "system", "content": system_context}] + st.session_state["messages"]
             )
             message = response.choices[0].message.content
             st.markdown(message)
