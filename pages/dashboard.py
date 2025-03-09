@@ -1,6 +1,8 @@
 import streamlit as st
 import sys
 import os
+from datetime import datetime, timedelta
+import plotly.express as px
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 # Import helper functions from our CSV-based recommendation module.
 from helpers.database import add_activity, get_user, get_garmin_id, get_poids, get_activities, get_pdv
@@ -45,6 +47,9 @@ def show():
         'saturated_fat_PDV': 100,  # Recommended value, change as necessary
         'carbohydrates_PDV': 100,  # Recommended value, change as necessary
     }
+    
+    
+
 
     # Loop through the PDV variables and show progress
     if pdv_today:
@@ -55,59 +60,82 @@ def show():
         # Loop through all PDV variables
         for pdv_variable, max_value in pdv_max_values.items():
             # Map PDV variable to its index
-            if pdv_variable == "total_fat_PDV":
-                idx = 0
-            elif pdv_variable == "sugar_PDV":
-                idx = 1
-            elif pdv_variable == "sodium_PDV":
-                idx = 2
-            elif pdv_variable == "protein_PDV":
-                idx = 3
-            elif pdv_variable == "saturated_fat_PDV":
-                idx = 4
-            elif pdv_variable == "carbohydrates_PDV":
-                idx = 5
+            idx_map = {
+                "total_fat_PDV": 0,
+                "sugar_PDV": 1,
+                "sodium_PDV": 2,
+                "protein_PDV": 3,
+                "saturated_fat_PDV": 4,
+                "carbohydrates_PDV": 5,
+            }
+            idx = idx_map.get(pdv_variable, None)
 
             # Calculate the total value for the PDV variable today
-            total_pdv_value = sum([entry[idx] for entry in pdv_today])
+            if idx is not None:
+                total_pdv_value = sum([entry[idx] for entry in pdv_today])
 
-            # Add data to lists for Plotly bar chart
-            bar_data.append(total_pdv_value)
-            bar_labels.append(pdv_variable.replace('_', ' ').title())
+                # Add data to lists for Plotly bar chart
+                bar_data.append(total_pdv_value)
+                bar_labels.append(pdv_variable.replace('_', ' ').title())
+        col1, col2 = st.columns(2)
+        with col1:
+            # Create the Plotly horizontal bar chart
+            fig = go.Figure()
 
-        # Create the Plotly bar chart
-        fig = go.Figure()
+            # Add horizontal bars for each PDV variable
+            fig.add_trace(go.Bar(
+                x=bar_data,
+                y=bar_labels,
+                name="Intake",
+                marker_color='orange',
+                orientation='h'  # Set orientation to horizontal
+            ))
 
-        # Add bars for each PDV variable
-        fig.add_trace(go.Bar(
-            x=bar_labels,
-            y=bar_data,
-            name="Intake",
-            marker_color='orange',
-        ))
+            # Add vertical line at 100 for the goal
+            fig.add_trace(go.Scatter(
+                x=[100] * len(bar_labels),
+                y=bar_labels,
+                mode='lines',
+                name="Goal Line (100%)",
+                line=dict(color='green', dash='dash'),
+            ))
 
-        # Add horizontal line at 100 for the goal
-        fig.add_trace(go.Scatter(
-            x=bar_labels,
-            y=[100] * len(bar_labels),
-            mode='lines',
-            name="Goal Line (100%)",
-            line=dict(color='black', dash='dash'),
-        ))
+            # Update layout to make the chart more readable
+            fig.update_layout(
+                title="Daily PDV Intake",
+                yaxis_title="PDV Variables",
+                xaxis_title="Value",
+                barmode='group',  # Group bars
+                showlegend=True,  # Display legend
+                template="plotly_dark",  # Use a dark theme (optional)
+                height=400  # Adjust height for readability
+            )
 
-        # Update layout to make the chart more readable
-        fig.update_layout(
-            title="Daily PDV Intake",
-            xaxis_title="PDV Variables",
-            yaxis_title="Value",
-            barmode='group',  # Side by side bars for each PDV variable
-            xaxis_tickangle=-45,
-            showlegend=True,  # Display legend
-            template="plotly_dark"  # Use a dark theme (optional)
-        )
+            # Display the Plotly chart in Streamlit
+            st.plotly_chart(fig)
+        with col2:
+            # Récupération des activités
+            username = st.session_state["user"]
+            activity_data = get_activities(username)
 
-        # Display the Plotly chart in Streamlit
-        st.plotly_chart(fig)
+            # Convertir les données en DataFrame
+            df_activities = pd.DataFrame(activity_data, columns=["Activity", "Start Time", "Calories", "BMR Calories", "Steps"])
+            df_activities["Start Time"] = pd.to_datetime(df_activities["Start Time"], errors='coerce')
+
+            # Filtrer les activités depuis le début
+            df_last_month = df_activities
+
+            # Compter la fréquence des types d'activités
+            activity_counts = df_last_month["Activity"].value_counts().reset_index()
+            activity_counts.columns = ["Activity", "Count"]
+
+            # Créer le pie chart avec Plotly
+            fig = px.pie(activity_counts, values="Count", names="Activity", title="Répartition des activités sur le mois passé")
+
+            # Afficher le graphique dans Streamlit
+            st.plotly_chart(fig)
+                
+
 
     # Get today's activities and calories burned
     today_activities = [activity for activity in activity_data if activity[1].startswith(today)]
@@ -119,45 +147,61 @@ def show():
     calorie_goal = 2000  # Change this based on user or recommendation
     calorie_progress = total_calories_today / calorie_goal * 100
 
-    fig1 = go.Figure()
-
-    # Bar for calories burned today
-    fig1.add_trace(go.Bar(
-        x=["Calories burned today"],
-        y=[total_calories_today],
-        name="Calories Burned",
-        marker_color='orange'
-    ))
-
-    # Horizontal line for the goal (2000 calories)
-    fig1.add_trace(go.Scatter(
-        x=["Calories burned today"],
-        y=[calorie_goal],
-        mode='lines',
-        name="Goal (2000)",
-        line=dict(color='gray', dash='dash'),
-    ))
-
-    fig1.update_layout(
-        title="Calories Burned Today",
-        xaxis_title="Activity",
-        yaxis_title="Calories",
-        showlegend=True
-    )
-
-    st.plotly_chart(fig1)
-
-    # Weight and BMI data visualization using Plotly
-    height_m = user_info[5] / 100  # Assuming height is at index 5 in user tuple, convert cm to meters
-    df_weight = pd.DataFrame(weight_data, columns=["Weight", "Date"])
-    df_weight["Date"] = pd.to_datetime(df_weight["Date"])
-    df_weight["BMI"] = df_weight["Weight"] / (height_m ** 2)
-
-    # Layout: Create two columns for the two graphs
     col1, col2 = st.columns(2)
-
-    # First column (Weight and BMI)
     with col1:
+        # Récupération des activités
+        username = st.session_state["user"]
+        activity_data = get_activities(username)
+
+        # Convertir les données en DataFrame
+        df_activities = pd.DataFrame(activity_data, columns=["Activity", "Start Time", "Calories", "BMR Calories", "Steps"])
+        df_activities["Start Time"] = pd.to_datetime(df_activities["Start Time"], errors='coerce')
+
+        if df_activities.empty:
+            st.write("No activity data available.")
+        else:
+            # Grouper les calories brûlées par jour
+            df_activities["Date"] = df_activities["Start Time"].dt.date
+            daily_calories = df_activities.groupby("Date")["Calories"].sum().reset_index()
+
+            # Création du graphique avec Plotly
+            fig1 = go.Figure()
+            fig1.add_trace(go.Scatter(
+                x=daily_calories["Date"],
+                y=daily_calories["Calories"],
+                mode='lines+markers',
+                name="Calories Burned",
+                line=dict(color='orange')
+            ))
+
+            # Ajouter une ligne horizontale pour l'objectif journalier de 2000 calories
+            fig1.add_trace(go.Scatter(
+                x=daily_calories["Date"],
+                y=[2000] * len(daily_calories),
+                mode='lines',
+                name="Goal (2000 kcal)",
+                line=dict(color='gray', dash='dash'),
+            ))
+
+            fig1.update_layout(
+                title="Calories Burned Since the Beginning",
+                xaxis_title="Date",
+                yaxis_title="Calories Burned",
+                xaxis=dict(tickformat="%Y-%m-%d"),
+                showlegend=True,
+                template="plotly_dark"
+            )
+
+            st.plotly_chart(fig1)
+
+    with col2:
+        
+        # Weight and BMI data visualization using Plotly
+        height_m = user_info[5] / 100  # Assuming height is at index 5 in user tuple, convert cm to meters
+        df_weight = pd.DataFrame(weight_data, columns=["Weight", "Date"])
+        df_weight["Date"] = pd.to_datetime(df_weight["Date"])
+        df_weight["BMI"] = df_weight["Weight"] / (height_m ** 2)
+            
         fig2 = go.Figure()
 
         # Weight trace
@@ -189,6 +233,57 @@ def show():
 
         st.plotly_chart(fig2)
 
+
+
+    # Layout: Create two columns for the two graphs
+    col1, col2 = st.columns(2)
+
+    # First column (Weight and BMI)
+    with col1:
+            # PDV Temporal Graph using Plotly
+        st.write("**PDV Temporal Graph**")
+
+        # Prepare a DataFrame for PDV data
+        pdv_df = pd.DataFrame(pdv_today, columns=[
+            'total_fat_PDV', 'sugar_PDV', 'sodium_PDV', 'protein_PDV', 
+            'saturated_fat_PDV', 'carbohydrates_PDV', 'some_other_variable', 'Date'
+        ])
+
+        # Convert the "Date" column to datetime format
+        pdv_df['Date'] = pd.to_datetime(pdv_df['Date'])
+
+        # Check that we have data
+        if not pdv_df.empty:
+            fig4 = go.Figure()
+
+            # Plot each PDV variable
+            for pdv_variable in pdv_max_values.keys():
+                fig4.add_trace(go.Scatter(
+                    x=pdv_df['Date'],
+                    y=pdv_df[pdv_variable],
+                    mode='lines+markers',
+                    name=pdv_variable.replace('_', ' ').title()
+                ))
+
+            # Horizontal line at 100 to represent the goal
+            fig4.add_trace(go.Scatter(
+                x=pdv_df['Date'],
+                y=[100] * len(pdv_df),
+                mode='lines',
+                name="Goal (100%)",
+                line=dict(color='gray', dash='dash'),
+            ))
+
+            fig4.update_layout(
+                title="Daily Temporal PDV Values",
+                xaxis_title="Date",
+                yaxis_title="PDV (%)",
+                showlegend=True
+            )
+
+            st.plotly_chart(fig4)
+
+   
     # Second column (Activity calories)
     with col2:
         df_activities = pd.DataFrame(activity_data, columns=["Activity", "Start Time", "Calories", "BMR Calories", "Steps"])
@@ -217,49 +312,6 @@ def show():
             )
 
             st.plotly_chart(fig3)
-
-    # PDV Temporal Graph using Plotly
-    st.write("**PDV Temporal Graph**")
-
-    # Prepare a DataFrame for PDV data
-    pdv_df = pd.DataFrame(pdv_today, columns=[
-        'total_fat_PDV', 'sugar_PDV', 'sodium_PDV', 'protein_PDV', 
-        'saturated_fat_PDV', 'carbohydrates_PDV', 'some_other_variable', 'Date'
-    ])
-
-    # Convert the "Date" column to datetime format
-    pdv_df['Date'] = pd.to_datetime(pdv_df['Date'])
-
-    # Check that we have data
-    if not pdv_df.empty:
-        fig4 = go.Figure()
-
-        # Plot each PDV variable
-        for pdv_variable in pdv_max_values.keys():
-            fig4.add_trace(go.Scatter(
-                x=pdv_df['Date'],
-                y=pdv_df[pdv_variable],
-                mode='lines+markers',
-                name=pdv_variable.replace('_', ' ').title()
-            ))
-
-        # Horizontal line at 100 to represent the goal
-        fig4.add_trace(go.Scatter(
-            x=pdv_df['Date'],
-            y=[100] * len(pdv_df),
-            mode='lines',
-            name="Goal (100%)",
-            line=dict(color='gray', dash='dash'),
-        ))
-
-        fig4.update_layout(
-            title="Daily Temporal PDV Values",
-            xaxis_title="Date",
-            yaxis_title="PDV (%)",
-            showlegend=True
-        )
-
-        st.plotly_chart(fig4)
 
     if "user" not in st.session_state or not st.session_state["user"]:
             st.warning("You must be logged in to access this page.")

@@ -3,6 +3,11 @@ import openai
 import sqlite3
 from datetime import datetime
 
+import streamlit as st
+import openai
+import sqlite3
+from datetime import datetime
+
 DB_FILE = "data/users.db"
 
 def get_user_info(username):
@@ -31,17 +36,38 @@ def get_user_info(username):
             "gender": "Male" if gender == "M" else "Female" if gender == "F" else "Unknown"
         }
     
-
     return None
 
+def get_last_activities(username):
+    """Récupère les 5 dernières activités de l'utilisateur."""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT activity_name, start_time, calories, steps 
+    FROM activities 
+    JOIN users ON activities.user_id = users.id 
+    WHERE users.username = ?
+    ORDER BY start_time DESC
+    LIMIT 5
+    """, (username,))
+
+    activities = cursor.fetchall()
+    conn.close()
+
+    if activities:
+        formatted_activities = "\n".join([
+            f"- {activity[0]} on {activity[1]}: {activity[2]} calories, {activity[3]} steps"
+            for activity in activities
+        ])
+        return f"The user has recently performed the following activities:\n{formatted_activities}"
+    return "The user has no recorded activities."
 
 def show():
-    # Configuration de l'API OpenAI (remplace par ta clé API)
-    client = openai.Client(api_key="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")
-        
-   
-# Titre de l'application
-    st.title("🥗 Your Personal Nutrition Coach 🤖")
+    # Configuration de l'API OpenAI
+    client = openai.Client(api_key="OPENAI_API_KEY")
+    
+    st.title("🥗 Your Personal Coach 🤖")
 
     # Initialisation de l'historique des messages
     if "messages" not in st.session_state:
@@ -57,6 +83,7 @@ def show():
     # Récupération des infos utilisateur
     username = st.session_state.get("user", "guest")
     user_info = get_user_info(username)
+    activities_info = get_last_activities(username)
 
     if user_info:
         user_context = f"""
@@ -65,8 +92,10 @@ def show():
         - Weight: {user_info['weight']} kg
         - Height: {user_info['height']} cm
         - Gender: {user_info['gender']}
-        
-        Remember these details and use them for personalized recommendations. 
+
+        {activities_info}
+
+        Remember these details and use them for personalized recommendations.
         If the user asks for their information later, remind them of what they provided.
         """
         st.session_state["user_context"] = user_context
