@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 # Import helper functions from our CSV-based recommendation module.
-from helpers.database import get_user  # to fetch user info (as used in informations.py)
+from helpers.database import get_user, add_pdv  # to fetch user info (as used in informations.py)
 from helpers.recipe_recommandation import propose_recipes, get_food_image_url
 
 import streamlit as st
@@ -70,27 +70,64 @@ def show():
     
     # --- Fridge Scanner Section ---
     st.header("Fridge Scanner")
-    uploaded_image = st.file_uploader("Upload an image of your fridge", type=["jpg", "jpeg", "png"])
-    detected_ingredients = []
-    if uploaded_image is not None:
-        # Save the uploaded image to disk as a temporary file.
-        temp_image_path = os.path.join("data", "fridge_images", "temp_uploaded.jpg")
-        with open(temp_image_path, "wb") as f:
-            f.write(uploaded_image.read())
-        
-        # Analyze the saved image using the YOLO model.
-        with st.spinner('Analyzing the fridge...'):
-            detected_ingredients = analyse_frigo(temp_image_path)
-        st.write("Detected ingredients:", detected_ingredients)
-        
-        # Display the annotated image saved by the model.
-        annotated_image_path = os.path.join("data", "fridge_images", "output", os.path.basename(temp_image_path))
-        if os.path.exists(annotated_image_path):
-            st.image(annotated_image_path, caption="Annotated Fridge Image", use_container_width=True)
-        else:
-            st.write("No image uploaded. You can manually select the ingredients.")
 
-    
+    # Button to toggle webcam activation
+    if "camera_active" not in st.session_state:
+        st.session_state.camera_active = False  # Default is webcam inactive
+
+    camera_button = st.button("Activate/Deactivate Camera")
+
+    if camera_button:
+        st.session_state.camera_active = not st.session_state.camera_active
+
+    # Initialize detected_ingredients as an empty list before any conditional logic
+    detected_ingredients = []
+
+    # Show webcam if it's activated
+    if st.session_state.camera_active:
+        camera_image = st.camera_input("Capture an image with your webcam or smartphone")
+        if camera_image is not None:
+            temp_image_path = os.path.join("data", "fridge_images", "temp_captured.jpg")
+            with open(temp_image_path, "wb") as f:
+                f.write(camera_image.getbuffer())
+            detected_ingredients = analyse_frigo(temp_image_path)
+            st.write("Detected ingredients:", detected_ingredients)
+
+            # Display the annotated image with bounding boxes
+            annotated_image_path = os.path.join("data", "fridge_images", "output", os.path.basename(temp_image_path))
+            if os.path.exists(annotated_image_path):
+                st.image(annotated_image_path, caption="Annotated Fridge Image", use_container_width=True)
+            else:
+                st.write("No image uploaded. You can manually select the ingredients.")
+    else:
+        st.write("Camera is deactivated. Click 'Activate Camera' to start capturing.")
+
+    # --- Manual Image Upload Option ---
+    uploaded_image = st.file_uploader("Or upload an image of your fridge", type=["jpg", "png", "jpeg"])
+
+    if uploaded_image is not None:
+        temp_image_path = os.path.join("data", "fridge_images", "uploaded_image.jpg")
+        with open(temp_image_path, "wb") as f:
+            f.write(uploaded_image.getbuffer())
+        
+        # Perform fridge analysis on the uploaded image and get the bounding box data
+        detected_ingredients = analyse_frigo(temp_image_path)
+        st.write("Detected ingredients from uploaded image:", detected_ingredients)
+
+        # Annotate the uploaded image with bounding boxes and save it
+        annotated_image_path = os.path.join("data", "fridge_images", "output", "uploaded_image.jpg")
+        
+        # Assuming 'analyse_frigo' already draws the bounding boxes and saves the annotated image.
+        # If it doesn't, you may need to manually call the drawing function after detection.
+        
+        # Display the annotated uploaded image with bounding boxes
+        if os.path.exists(annotated_image_path):
+            st.image(annotated_image_path, caption="Annotated Fridge Image (Uploaded)", use_container_width=True)
+        else:
+            st.write("No image processed. Something went wrong during the analysis.")
+
+
+
     # --- Ingredient Selection (Fixed List of 30) ---
     ingredient_options = [
         "apple", "banana", "beef", "blueberries", "bread", "butter", "carrot",
@@ -132,86 +169,104 @@ def show():
         
     # Make the goal column bold for better visibility
     st.markdown(f""" 
-    **⬇️ Lose Weight** < {tdee:.0f} cal/day < ⬆️ Gain Weight**
+    ⬇️ Lose Weight < {tdee:.0f} cal/day < ⬆️ Gain Weight
     """)
 
 
     # --- Recipe Recommendations ---
     st.header("Recipe Recommendations")
+        
+    if "matching_recipes" not in st.session_state:
+        st.session_state.matching_recipes = []
+
     if st.button("Find Recipes"):
         if selected_ingredients:
             matching_recipes = propose_recipes(selected_ingredients)
             if not matching_recipes.empty:
                 top_recipes = matching_recipes.head(10)  # Limit to top 10 recipes
+                st.session_state.matching_recipes = top_recipes  # Save recipes in session state
                 st.write(f"Found a top-{len(top_recipes)} matching recipes!")
 
-                for idx, recipe in top_recipes.iterrows():
-                    st.subheader(recipe["name"].capitalize())
-                    
-                    # Création de colonnes pour mieux organiser l'affichage
-                    col1, col2 = st.columns([2, 1])  # 2/3 pour image + infos, 1/3 pour ingrédients
-                    
-                    with col1:
-                        # Lien cliquable sur l'image
-                        image_url = get_food_image_url(recipe["id"])
-                        if image_url:
-                            recipe_url = f"https://www.food.com/recipe/{recipe['name'].lower().replace(' ', '-')}-{recipe['id']}"  # Génère le lien vers la recette
-                            st.markdown(f'<a href="{recipe_url}" target="_blank"><img src="{image_url}" alt="{recipe["name"]}" style="width:100%;"></a>', unsafe_allow_html=True)
-                        else:
-                            st.write("No image available.")
+    else:
+        st.warning("Please select at least one ingredient.")
+        
 
-                        
-                        # Affichage du temps de cuisson et de la description
-                        st.write(f"⏳ **Cooking time**: {recipe['minutes']} minutes")
-                        st.write(f"📜 **Author's description:** {recipe['description']}")
-                        
-                        # Affichage des PDV sous forme de tableau
-                        pdv_data = {
-                            "Calories": [recipe["calories"]],
-                            "Fat PDV": [recipe["total_fat_PDV"]],
-                            "Sugar PDV": [recipe["sugar_PDV"]],
-                            "Sodium PDV": [recipe["sodium_PDV"]],
-                            "Protein PDV": [recipe["protein_PDV"]],
-                            "Saturated Fat PDV": [recipe["saturated_fat_PDV"]],
-                            "Carbohydrates PDV": [recipe["carbohydrates_PDV"]],
-                        }
-                        # Convert the dictionary to a DataFrame
-                        df = pd.DataFrame(pdv_data)
+    # Check if matching_recipes is not empty
+    # Check if matching_recipes is not empty
+    if len(st.session_state.matching_recipes) > 0:
+        for _, recipe in st.session_state.matching_recipes.iterrows():
+            # Création de colonnes pour mieux organiser l'affichage
+            col1, col2 = st.columns([2, 1])  # 2/3 pour image + infos, 1/3 pour ingrédients
 
-                        # Function to format numbers
-                        def format_number(val, is_first_value=False):
-                            if isinstance(val, (int, float)):
-                                if is_first_value:  # No decimals for the first value
-                                    return int(val)
-                                else:  # Add "%" for the others and round to 2 decimals
-                                    return f"{val:.2f}%"
-                            return val
+            with col1:
+                # Lien cliquable sur l'image
+                image_url = get_food_image_url(recipe["id"])  # Accessing the recipe's ID
+                if image_url:
+                    recipe_url = f"https://www.food.com/recipe/{recipe['name'].lower().replace(' ', '-')}-{recipe['id']}"  # Génère le lien vers la recette
+                    st.markdown(f'<a href="{recipe_url}" target="_blank"><img src="{image_url}" alt="{recipe["name"]}" style="width:100%;"></a>', unsafe_allow_html=True)
+                else:
+                    st.write("No image available.")
 
-                        # Apply the formatting to the whole DataFrame
-                        # Apply the formatting to the whole DataFrame using apply instead of applymap
-                        df_formatted = df.apply(lambda col: col.apply(lambda x: format_number(x, is_first_value=False)))
+                # Affichage du temps de cuisson et de la description
+                st.write(f"⏳ **Cooking time**: {recipe['minutes']} minutes")
+                st.write(f"📜 **Author's description:** {recipe['description']}")
+                
+                # Affichage des PDV sous forme de tableau
+                pdv_data = {
+                    "Calories": [recipe["calories"]],
+                    "Fat PDV": [recipe["total_fat_PDV"]],
+                    "Sugar PDV": [recipe["sugar_PDV"]],
+                    "Sodium PDV": [recipe["sodium_PDV"]],
+                    "Protein PDV": [recipe["protein_PDV"]],
+                    "Saturated Fat PDV": [recipe["saturated_fat_PDV"]],
+                    "Carbohydrates PDV": [recipe["carbohydrates_PDV"]],
+                }
+                # Convert the dictionary to a DataFrame
+                df = pd.DataFrame(pdv_data)
+                
+                # Function to format numbers
+                def format_number(val, is_first_value=False):
+                    if isinstance(val, (int, float)):
+                        if is_first_value:  # No decimals for the first value
+                            return int(val)
+                        else:  # Add "%" for the others and round to 2 decimals
+                            return f"{val:.2f}%"
+                    return val
 
-                        df_formatted.iloc[0, 0] = format_number(df_formatted.iloc[0, 0], is_first_value=True).replace('%','')  # Ensure no decimals for the first value
+                # Apply the formatting to the whole DataFrame
+                df_formatted = df.apply(lambda col: col.apply(lambda x: format_number(x, is_first_value=False)))
 
-                    
-                    with col2:
-                        # Affichage des ingrédients à droite
-                        st.write("🛒 **Ingredients:**")
-                        for ingredient in recipe["ingredients_list"].split(", "):
-                            st.write("- {}".format(ingredient.replace('\"', '').strip().strip("[").strip("]").strip("'")))
-                    
-                    # Display the table with formatted values
-                    st.table(df_formatted.style.hide(axis="index"))
-            else:
-                st.warning("No recipes found with these ingredients. Try adding more!")
-        else:
-            st.warning("Please select at least one ingredient.")
+                df_formatted.iloc[0, 0] = format_number(df_formatted.iloc[0, 0], is_first_value=True).replace('%','')  # Ensure no decimals for the first value
+
+            with col2:
+                # Affichage des ingrédients à droite
+                st.write("🛒 **Ingredients:**")
+                for ingredient in recipe["ingredients_list"].split(", "):
+                    st.write("- {}".format(ingredient.replace('\"', '').strip().strip("[").strip("]").strip("'")))
+
+                # Add button to save the recipe to pdv
+                if st.button(f"Save {recipe['name']} to my nutrition plan"):
+                    # Add the recipe's nutritional information to the pdv table
+                    add_pdv(
+                        user_id=user[0],  # Pass the user ID from the session
+                        calories=recipe["calories"],  # Assuming 'calories' is available in the recipe data
+                        total_fat_PDV=recipe.get("total_fat_PDV", None),  # Using .get() to avoid KeyError
+                        sugar_PDV=recipe.get("sugar_PDV", None),
+                        sodium_PDV=recipe.get("sodium_PDV", None),
+                        protein_PDV=recipe.get("protein_PDV", None),
+                        saturated_fat_PDV=recipe.get("saturated_fat_PDV", None),
+                        carbohydrates_PDV=recipe.get("carbohydrates_PDV", None)
+                    )
+                    st.success(f"Recipe {recipe['name']} has been added to your nutrition plan!")
+
+            # Display the table with formatted values
+            st.table(df_formatted.style.hide(axis="index"))
+
+    else:
+        st.write("No recipes found yet. Click 'Find Recipes' to discover delicious meals!")
 
 
-    
-    st.markdown("""
-    *Note:* This demo uses CSV data for recipes. The CSV is static and loaded only once.
-    """)
+
 
 if __name__ == "__main__":
     show()

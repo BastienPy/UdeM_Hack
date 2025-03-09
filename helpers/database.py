@@ -86,7 +86,7 @@ def get_poids(user_id):
     conn.close()
     return poids    
 
-def add_pdv(user_id, calories, total_fat_PDV, sugar_PDV, sodium_PDV, protein_PDV, saturated_fat_PDV, carbohydrates_PDV):
+def add_pdv(user_id, calories, total_fat_PDV=None, sugar_PDV=None, sodium_PDV=None, protein_PDV=None, saturated_fat_PDV=None, carbohydrates_PDV=None):
     """Ajoute une entrée de pourcentage de valeurs nutritionnelles"""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
