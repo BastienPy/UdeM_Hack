@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import plotly.express as px
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 # Import helper functions from our CSV-based recommendation module.
-from helpers.database import add_activity, get_user, get_garmin_id, get_poids, get_activities, get_pdv
+from helpers.database import get_user, get_poids, get_activities, get_pdv
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -114,8 +114,7 @@ def show():
             # Display the Plotly chart in Streamlit
             st.plotly_chart(fig)
         with col2:
-            # PDV Temporal Graph using Plotly
-            st.write("**PDV Temporal Graph**")
+            
 
             # Prepare a DataFrame for PDV data
             pdv_df = pd.DataFrame(pdv_data, columns=[
@@ -288,30 +287,3 @@ def show():
     )
     # Afficher le graphique dans Streamlit
     st.plotly_chart(fig)
-
-
-    if "user" not in st.session_state or not st.session_state["user"]:
-            st.warning("You must be logged in to access this page.")
-            return
-
-    username = st.session_state["user"]
-    user = get_user(username)
-
-    if user:  # Vérifier que l'utilisateur a bien été ajouté
-        user_id = user[0]
-    
-    garmin_id, garmin_password = get_garmin_id(user_id)
-
-    if st.button('Update Data'):
-        if not garmin_id or not garmin_password:
-            st.error("❌ Garmin ID or password not found")
-        else:
-            update = add_activity(user_id, garmin_id, 'eUMckMQM94!!')
-            try:
-                if update:
-                    st.write("✅ Data updated successfully!")
-                else:
-                    st.write(f"❌ An error occurred with the API")
-            except Exception as e:
-                st.write(f"❌ An error occurred with the API")
-            
