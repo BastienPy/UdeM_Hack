@@ -92,7 +92,7 @@ if st.session_state["authenticated"]:
         st.markdown(f"**Logged in as:** {st.session_state['user']}")
         page = option_menu(
             "Navigation Bar",
-            ["Dashboard", "Alimentation", "Personal Information", "Coach"],
+            ["Dashboard", "Alimentation", "Personal Information", "Coach (not available because of API cost)"],
             icons=['house', 'apple', 'info-circle', 'chat'],
             menu_icon="",
             default_index=0,
