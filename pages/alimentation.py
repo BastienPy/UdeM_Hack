@@ -24,6 +24,24 @@ def load_food_data():
 
 food_data = load_food_data()
 
+def process_image(image_path: str | Path, caption: str = "Annotated image"):
+    """
+    • appelle analyse_frigo()
+    • affiche l’image annotée (si elle existe)
+    • retourne la liste des ingrédients détectés
+    """
+    image_path = Path(image_path)
+    detected = analyse_frigo(str(image_path))
+    st.write("Detected ingredients:", detected)
+
+    annotated_path = Path("data/fridge_images/output") / image_path.name
+    if annotated_path.exists():
+        st.image(str(annotated_path), caption=caption, use_container_width=True)
+    else:
+        st.warning("Annotated image not found — check analyse_frigo output path.")
+
+    return detected
+
 def calculate_bmr(weight, height, age, gender):
     """Calculates the Basal Metabolic Rate using the Mifflin-St Jeor equation."""
     # Convert input values to float, providing defaults if conversion fails.
@@ -96,24 +114,23 @@ def show():
     if st.session_state.camera_active:
         camera_image = st.camera_input("Capture an image with your webcam or smartphone")
         if camera_image is not None:
-            temp_image_path = os.path.join("data", "fridge_images", "temp_captured.jpg")
-            with open(temp_image_path, "wb") as f:
-                f.write(camera_image.getbuffer())
-            detected_ingredients = analyse_frigo(temp_image_path)
-            st.write("Detected ingredients:", detected_ingredients)
+            temp_image_path = Path("data/fridge_images/temp_captured.jpg")
+            temp_image_path.parent.mkdir(parents=True, exist_ok=True)
+            temp_image_path.write_bytes(camera_image.getbuffer())
 
-            # Display the annotated image with bounding boxes
-            annotated_image_path = os.path.join("data", "fridge_images", "output", os.path.basename(temp_image_path))
-            if os.path.exists(annotated_image_path):
-                st.image(annotated_image_path, caption="Annotated Fridge Image", use_container_width=True)
-            else:
-                st.write("No image uploaded. You can manually select the ingredients.")
+            detected_ingredients = process_image(temp_image_path, "Annotated Fridge Image (Camera)")
     else:
         st.write("Camera is deactivated. Click 'Activate Camera' to start capturing.")
 
     # --- Manual Image Upload Option ---
     uploaded_image = st.file_uploader("Or upload an image of your fridge",
                                     type=["jpg", "png", "jpeg"])
+    if uploaded_image is not None:
+        temp_image_path = Path("data/fridge_images/uploaded_image.jpg")
+        temp_image_path.parent.mkdir(parents=True, exist_ok=True)
+        temp_image_path.write_bytes(uploaded_image.getbuffer())
+
+        detected_ingredients = process_image(temp_image_path, "Annotated Fridge Image (Upload)")
 
     # --- OFFRIR UNE IMAGE DÉMO ---
     if (
@@ -122,16 +139,8 @@ def show():
         and not st.session_state.camera_active
     ):
         if st.button("🔍 Tester avec une image de démonstration"):
-            temp_image_path = str(DEMO_IMAGE)
-            detected_ingredients = analyse_frigo(temp_image_path)
-            st.success("Image démo analysée !")
-            st.write("Detected ingredients:", detected_ingredients)
-
-            annotated_demo = Path("data/fridge_images/output") / DEMO_IMAGE.name
-            if annotated_demo.exists():
-                st.image(str(annotated_demo),
-                        caption="Annotated Demo Fridge Image",
-                        use_container_width=True)
+            detected_ingredients = process_image(DEMO_IMAGE, "Annotated Demo Fridge Image")
+            
 
     # --- Ingredient Selection (Fixed List of 30) ---
     ingredient_options = [
