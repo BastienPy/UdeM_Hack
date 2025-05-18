@@ -92,7 +92,7 @@ def show():
         st.session_state.camera_active = not st.session_state.camera_active
 
     detected_ingredients: list[str] = []      # will be filled below
-
+    detected_ingredients = st.session_state.get("detected_ingredients", [])
 
     # --------------------------------------------------------------------------- #
     # Helper: run YOLO + show (annotated if present, raw fallback)
@@ -120,6 +120,7 @@ def show():
             f.write(camera_image.getbuffer())
 
         detected_ingredients = process_and_show(temp_path, "Annotated Fridge Image")
+        st.session_state["detected_ingredients"] = detected_ingredients 
     else:
         st.write("Camera is deactivated. Click **Activate Camera** to start capturing.")
 
@@ -138,6 +139,7 @@ def show():
         detected_ingredients = process_and_show(
             upload_path, "Annotated Fridge Image (Uploaded)"
         )
+        st.session_state["detected_ingredients"] = detected_ingredients
         
     # ── Sample image option ─────────────────────────────────────────────────────
     elif st.button("Use sample fridge photo 🖼️"):
@@ -145,6 +147,7 @@ def show():
             detected_ingredients = process_and_show(
                 str(SAMPLE_IMAGE_PATH), "Annotated Fridge Image (Sample)"
             )
+            st.session_state["detected_ingredients"] = detected_ingredients
         else:
             st.error("⚠️ Sample image not found — check the path.")
 
