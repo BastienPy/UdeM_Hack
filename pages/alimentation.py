@@ -13,34 +13,11 @@ from datetime import datetime
 # Import our YOLO-based fridge analysis function from our custom module.
 from helpers.food_detection import analyse_frigo
 
-from pathlib import Path
-import requests
-
-DEMO_IMAGE = Path("data/fridge_images/input/DSC_5941_JPG_jpg.rf.c00e39d13c6fd142558dc2cc8424a0f5.jpg")
-
 @st.cache_data
 def load_food_data():
     return pd.read_csv(r'data/processed_recipes_with_categories.csv')
 
 food_data = load_food_data()
-
-def process_image(image_path: str | Path, caption: str = "Annotated image"):
-    """
-    • appelle analyse_frigo()
-    • affiche l’image annotée (si elle existe)
-    • retourne la liste des ingrédients détectés
-    """
-    image_path = Path(image_path)
-    detected = analyse_frigo(str(image_path))
-    st.write("Detected ingredients:", detected)
-
-    annotated_path = Path("data/fridge_images/output") / image_path.name
-    if annotated_path.exists():
-        st.image(str(annotated_path), caption=caption, use_container_width=True)
-    else:
-        st.warning("Annotated image not found — check analyse_frigo output path.")
-
-    return detected
 
 def calculate_bmr(weight, height, age, gender):
     """Calculates the Basal Metabolic Rate using the Mifflin-St Jeor equation."""
@@ -71,9 +48,6 @@ def get_daily_calories_from_garmin(user_id):
 
 def show():
     st.title("Show me the Food! I'll tell you what to eat 🍔🥗")
-    
-    detected_ingredients = []
-    uploaded_image = None
 
     # Retrieve user info from session state using the database helper.
     username = st.session_state.get("user")
@@ -114,33 +88,45 @@ def show():
     if st.session_state.camera_active:
         camera_image = st.camera_input("Capture an image with your webcam or smartphone")
         if camera_image is not None:
-            temp_image_path = Path("data/fridge_images/temp_captured.jpg")
-            temp_image_path.parent.mkdir(parents=True, exist_ok=True)
-            temp_image_path.write_bytes(camera_image.getbuffer())
+            temp_image_path = os.path.join("data", "fridge_images", "temp_captured.jpg")
+            with open(temp_image_path, "wb") as f:
+                f.write(camera_image.getbuffer())
+            detected_ingredients = analyse_frigo(temp_image_path)
+            st.write("Detected ingredients:", detected_ingredients)
 
-            detected_ingredients = process_image(temp_image_path, "Annotated Fridge Image (Camera)")
+            # Display the annotated image with bounding boxes
+            annotated_image_path = os.path.join("data", "fridge_images", "output", os.path.basename(temp_image_path))
+            if os.path.exists(annotated_image_path):
+                st.image(annotated_image_path, caption="Annotated Fridge Image", use_container_width=True)
+            else:
+                st.write("No image uploaded. You can manually select the ingredients.")
     else:
         st.write("Camera is deactivated. Click 'Activate Camera' to start capturing.")
 
     # --- Manual Image Upload Option ---
-    uploaded_image = st.file_uploader("Or upload an image of your fridge",
-                                    type=["jpg", "png", "jpeg"])
+    uploaded_image = st.file_uploader("Or upload an image of your fridge", type=["jpg", "png", "jpeg"])
+
     if uploaded_image is not None:
-        temp_image_path = Path("data/fridge_images/uploaded_image.jpg")
-        temp_image_path.parent.mkdir(parents=True, exist_ok=True)
-        temp_image_path.write_bytes(uploaded_image.getbuffer())
+        temp_image_path = os.path.join("data", "fridge_images", "uploaded_image.jpg")
+        with open(temp_image_path, "wb") as f:
+            f.write(uploaded_image.getbuffer())
+        
+        # Perform fridge analysis on the uploaded image and get the bounding box data
+        detected_ingredients = analyse_frigo(temp_image_path)
+        st.write("Detected ingredients from uploaded image:", detected_ingredients)
 
-        detected_ingredients = process_image(temp_image_path, "Annotated Fridge Image (Upload)")
+        # Annotate the uploaded image with bounding boxes and save it
+        annotated_image_path = os.path.join("data", "fridge_images", "output", "uploaded_image.jpg")
+        
+        # Assuming 'analyse_frigo' already draws the bounding boxes and saves the annotated image.
+        # If it doesn't, you may need to manually call the drawing function after detection.
+        
+        # Display the annotated uploaded image with bounding boxes
+        if os.path.exists(annotated_image_path):
+            st.image(annotated_image_path, caption="Annotated Fridge Image (Uploaded)", width=450)
+        else:
+            st.write("No image processed. Something went wrong during the analysis.")
 
-    # --- OFFRIR UNE IMAGE DÉMO ---
-    if (
-        not detected_ingredients
-        and uploaded_image is None
-        and not st.session_state.camera_active
-    ):
-        if st.button("🔍 Tester avec une image de démonstration"):
-            detected_ingredients = process_image(DEMO_IMAGE, "Annotated Demo Fridge Image")
-            
 
     # --- Ingredient Selection (Fixed List of 30) ---
     ingredient_options = [
