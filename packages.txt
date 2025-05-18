@@ -1,1 +1,2 @@
-\nlibgl1\nlibsm6\n
+nlibgl1
+nlibsm6
