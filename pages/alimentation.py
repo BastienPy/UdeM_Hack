@@ -103,8 +103,21 @@ def show():
         with open(temp_image_path, "wb") as f:
             f.write(camera_image.getbuffer())
 
-        # raw preview
-        st.image(temp_image_path, caption="Raw capture", use_container_width=True)
+        detected_ingredients = analyse_frigo(temp_image_path)
+
+        # Show the annotated version instead  ⤵︎
+        annotated_image_path = os.path.join(
+            "data", "fridge_images", "output", f"{unique_id}.jpg"
+        )
+        if os.path.exists(annotated_image_path):
+            st.image(
+                annotated_image_path,
+                caption="Annotated Fridge Image",
+                use_container_width=True,
+            )
+        else:
+            # fall-back to the raw capture only if annotation missing
+            st.image(temp_image_path, caption="(raw capture)", use_container_width=True)
 
         detected_ingredients = analyse_frigo(temp_image_path)
         st.write("Detected ingredients:", detected_ingredients)
