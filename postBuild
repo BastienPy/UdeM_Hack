@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -e
+
+git lfs install --skip-repo  # initialise le client côté conteneur
+git lfs pull
