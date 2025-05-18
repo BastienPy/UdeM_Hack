@@ -25,9 +25,16 @@ CSV = pathlib.Path("data/processed_recipes_with_categories.csv")
 # ── data cache ───────────────────────────────────────────────────────────────
 @st.cache_data
 def load_food_data():
-    # si le CSV est encore un pointeur, on télécharge les blobs LFS :
-    if CSV.read_text(100).startswith("version https://git-lfs"):
+    # --- vérifie si le fichier est un pointeur LFS -----------------------
+    if CSV.exists():
+        with CSV.open("r", encoding="utf-8", errors="ignore") as f:
+            first_line = f.readline()            # on lit juste la 1ʳᵉ ligne
+        if first_line.startswith("version https://git-lfs"):
+            subprocess.run(["git", "lfs", "pull"], check=True)
+    else:
         subprocess.run(["git", "lfs", "pull"], check=True)
+
+    # --------------------------------------------------------------------
     return pd.read_csv(CSV)
 
 food_data = load_food_data()
