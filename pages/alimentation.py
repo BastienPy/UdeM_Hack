@@ -19,11 +19,16 @@ SAMPLE_IMAGE_PATH = Path(
     "data/fridge_images/input/DSC_5941_JPG_jpg.rf.c00e39d13c6fd142558dc2cc8424a0f5.jpg"
 )
 
+import subprocess, pathlib
+CSV = pathlib.Path("data/processed_recipes_with_categories.csv")
 
 # ── data cache ───────────────────────────────────────────────────────────────
 @st.cache_data
 def load_food_data():
-    return pd.read_csv(r'data/processed_recipes_with_categories.csv')
+    # si le CSV est encore un pointeur, on télécharge les blobs LFS :
+    if CSV.read_text(100).startswith("version https://git-lfs"):
+        subprocess.run(["git", "lfs", "pull"], check=True)
+    return pd.read_csv(CSV)
 
 food_data = load_food_data()
 
