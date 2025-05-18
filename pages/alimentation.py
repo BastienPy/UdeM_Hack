@@ -16,7 +16,7 @@ from helpers.food_detection import analyse_frigo
 from pathlib import Path
 import requests
 
-DEMO_IMAGE = Path("data\fridge_images\input\DSC_5941_JPG_jpg.rf.c00e39d13c6fd142558dc2cc8424a0f5.jpg")
+DEMO_IMAGE = Path("data/fridge_images/input/DSC_5941_JPG_jpg.rf.c00e39d13c6fd142558dc2cc8424a0f5.jpg")
 
 @st.cache_data
 def load_food_data():
