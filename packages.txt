@@ -1,2 +1,2 @@
-nlibgl1
-nlibsm6
+libgl1
+libsm6
