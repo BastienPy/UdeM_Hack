@@ -13,6 +13,12 @@ import pandas as pd
 from PIL import Image
 from datetime import datetime
 
+from pathlib import Path   # déjà utilisé dans analyse_frigo, on le ré-importe ici
+
+SAMPLE_IMAGE_PATH = Path(
+    "data/fridge_images/input/DSC_5941_JPG_jpg.rf.c00e39d13c6fd142558dc2cc8424a0f5.jpg"
+)
+
 
 # ── data cache ───────────────────────────────────────────────────────────────
 @st.cache_data
@@ -132,6 +138,15 @@ def show():
         detected_ingredients = process_and_show(
             upload_path, "Annotated Fridge Image (Uploaded)"
         )
+        
+    # ── Sample image option ─────────────────────────────────────────────────────
+    elif st.button("Use sample fridge photo 🖼️"):
+        if SAMPLE_IMAGE_PATH.exists():
+            detected_ingredients = process_and_show(
+                str(SAMPLE_IMAGE_PATH), "Annotated Fridge Image (Sample)"
+            )
+        else:
+            st.error("⚠️ Sample image not found — check the path.")
 
     # --- Ingredient Selection -------------------------------------------------
     ingredient_options = [
