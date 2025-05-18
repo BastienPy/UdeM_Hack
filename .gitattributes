@@ -1,1 +1,2 @@
+data/processed_recipes_with_categories.csv filter=lfs diff=lfs merge=lfs -text
 *.csv filter=lfs diff=lfs merge=lfs -text
