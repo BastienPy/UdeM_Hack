@@ -63,9 +63,6 @@ def propose_recipes(ingredients_list):
         # 'recipe_ingredients' is expected to be a string (from the CSV).
         return sum(1 for ingredient in ingredients_list if ingredient in recipe_ingredients)
     
-    st.write("Colonnes lues :", list(food_data.columns))
-    st.write("Premières lignes :", food_data.head())
-
     # Filter recipes: here we require at least 3 matching ingredients.
     matching_recipes = food_data[food_data['ingredients'].apply(lambda x: count_matching_ingredients(x.lower())) >= 3]
     

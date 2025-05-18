@@ -26,7 +26,8 @@ def load_food_data():
     return pd.read_csv(r'data/processed_recipes_with_categories.csv')
 
 food_data = load_food_data()
-
+st.write("Colonnes lues :", list(food_data.columns))
+st.write("Premières lignes :", food_data.head())
 
 # ── utilities ────────────────────────────────────────────────────────────────
 def calculate_bmr(weight, height, age, gender):
