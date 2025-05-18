@@ -92,20 +92,12 @@ def show():
     # Helper: run YOLO + show (annotated if present, raw fallback)
     # --------------------------------------------------------------------------- #
     def process_and_show(image_path: str, caption: str) -> list[str]:
-        """Runs analyse_frigo, shows the annotated image, returns ingredient list."""
-        ingredients = analyse_frigo(image_path)
+        """Run YOLO, affiche l'image annotée et renvoie la liste d'ingrédients."""
+        ingredients, annotated_path = analyse_frigo(image_path)
 
-        annotated_path = os.path.join(
-            "data", "fridge_images", "output", os.path.basename(image_path)
-        )
-        if os.path.exists(annotated_path):
-            st.image(annotated_path, caption=caption, use_container_width=True)
-        else:
-            st.image(image_path, caption=f"{caption} (raw)", use_container_width=True)
-
+        st.image(annotated_path, caption=caption, use_container_width=True)
         st.write("Detected ingredients:", ingredients)
         return ingredients
-
 
     # ── Webcam capture ─────────────────────────────────────────────────────────-
     if st.session_state.camera_active:
