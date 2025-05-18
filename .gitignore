@@ -1,6 +1,3 @@
-/data/processed_recipes_with_categories.csv
-/data/processed_recipes.csv
-/data/RAW_recipes.csv
 /data/users.db
 .env
 
