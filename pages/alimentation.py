@@ -53,6 +53,9 @@ def get_daily_calories_from_garmin(user_id):
 
 def show():
     st.title("Show me the Food! I'll tell you what to eat 🍔🥗")
+    
+    detected_ingredients = []
+    uploaded_image = None
 
     # Retrieve user info from session state using the database helper.
     username = st.session_state.get("user")
@@ -109,24 +112,26 @@ def show():
         st.write("Camera is deactivated. Click 'Activate Camera' to start capturing.")
 
     # --- Manual Image Upload Option ---
+    uploaded_image = st.file_uploader("Or upload an image of your fridge",
+                                    type=["jpg", "png", "jpeg"])
+
+    # --- OFFRIR UNE IMAGE DÉMO ---
     if (
-        not detected_ingredients            # rien trouvé pour l'instant
-        and uploaded_image is None          # aucune image chargée
-        and not st.session_state.camera_active  # webcam inactive
+        not detected_ingredients
+        and uploaded_image is None
+        and not st.session_state.camera_active
     ):
         if st.button("🔍 Tester avec une image de démonstration"):
             temp_image_path = str(DEMO_IMAGE)
             detected_ingredients = analyse_frigo(temp_image_path)
-            st.success("Image démo analysée avec succès !")
+            st.success("Image démo analysée !")
             st.write("Detected ingredients:", detected_ingredients)
 
             annotated_demo = Path("data/fridge_images/output") / DEMO_IMAGE.name
             if annotated_demo.exists():
-                st.image(
-                    str(annotated_demo),
-                    caption="Annotated Demo Fridge Image",
-                    use_container_width=True,
-                )
+                st.image(str(annotated_demo),
+                        caption="Annotated Demo Fridge Image",
+                        use_container_width=True)
                 
     uploaded_image = st.file_uploader("Or upload an image of your fridge", type=["jpg", "png", "jpeg"])
 
