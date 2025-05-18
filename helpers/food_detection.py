@@ -6,7 +6,9 @@ image_output_folder = r"data\fridge_images\output"
 
 def analyse_frigo(image_path):
     # Charger le modèle YOLOv11 entraîné
-    model = YOLO("data\yolo11_finetuned.pt")
+    from pathlib import Path
+    MODEL_PATH = Path(__file__).parent.parent / "data" / "yolo11_finetuned.pt"
+    model = YOLO(str(MODEL_PATH))
     
     # Faire la prédiction sur l'image spécifiée
     results = model.predict(image_path, verbose=False)
