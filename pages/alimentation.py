@@ -261,8 +261,9 @@ def show():
             # ── right column: ingredients + save button ────────────────────
             with col2:
                 st.write("🛒 **Ingredients:**")
-                for ing in recipe["ingredients_list"].split(", "):
-                    st.write(f"- {ing.strip('\"[] ')}")
+                for raw_ing in recipe["ingredients_list"].split(", "):
+                    clean_ing = raw_ing.strip('"[] ').strip("'")
+                    st.write(f"- {clean_ing}")
 
                 if st.button(f"Save {recipe['name']}"):
                     add_pdv(
