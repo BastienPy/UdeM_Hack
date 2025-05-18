@@ -135,27 +135,6 @@ def show():
                 
     uploaded_image = st.file_uploader("Or upload an image of your fridge", type=["jpg", "png", "jpeg"])
 
-    if uploaded_image is not None:
-        temp_image_path = os.path.join("data", "fridge_images", "uploaded_image.jpg")
-        with open(temp_image_path, "wb") as f:
-            f.write(uploaded_image.getbuffer())
-        
-        # Perform fridge analysis on the uploaded image and get the bounding box data
-        detected_ingredients = analyse_frigo(temp_image_path)
-        st.write("Detected ingredients from uploaded image:", detected_ingredients)
-
-        # Annotate the uploaded image with bounding boxes and save it
-        annotated_image_path = os.path.join("data", "fridge_images", "output", "uploaded_image.jpg")
-        
-        # Assuming 'analyse_frigo' already draws the bounding boxes and saves the annotated image.
-        # If it doesn't, you may need to manually call the drawing function after detection.
-        
-        # Display the annotated uploaded image with bounding boxes
-        if os.path.exists(annotated_image_path):
-            st.image(annotated_image_path, caption="Annotated Fridge Image (Uploaded)", width=450)
-        else:
-            st.write("No image processed. Something went wrong during the analysis.")
-
 
     # --- Ingredient Selection (Fixed List of 30) ---
     ingredient_options = [
