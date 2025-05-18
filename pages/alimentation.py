@@ -76,7 +76,7 @@ def show():
         age = 30
     gender = user[6]
 
-    # --- Fridge Scanner ------------------------------------------------------
+    # ── Fridge Scanner ──────────────────────────────────────────────────────────
     st.header("Fridge Scanner")
 
     if "camera_active" not in st.session_state:
@@ -85,79 +85,61 @@ def show():
     if st.button("Activate/Deactivate Camera"):
         st.session_state.camera_active = not st.session_state.camera_active
 
-    detected_ingredients: list[str] = []
+    detected_ingredients: list[str] = []      # will be filled below
 
-    # ── Webcam capture ────────────────────────────────────────────────────
+
+    # --------------------------------------------------------------------------- #
+    # Helper: run YOLO + show (annotated if present, raw fallback)
+    # --------------------------------------------------------------------------- #
+    def process_and_show(image_path: str, caption: str) -> list[str]:
+        """Runs analyse_frigo, shows the annotated image, returns ingredient list."""
+        ingredients = analyse_frigo(image_path)
+
+        annotated_path = os.path.join(
+            "data", "fridge_images", "output", os.path.basename(image_path)
+        )
+        if os.path.exists(annotated_path):
+            st.image(annotated_path, caption=caption, use_container_width=True)
+        else:
+            st.image(image_path, caption=f"{caption} (raw)", use_container_width=True)
+
+        st.write("Detected ingredients:", ingredients)
+        return ingredients
+
+
+    # ── Webcam capture ─────────────────────────────────────────────────────────-
     if st.session_state.camera_active:
         camera_image = st.camera_input("Capture an image with your webcam or smartphone")
 
-        # 🛑 Prevent rerun spam while user hasn’t clicked “Capture”
-        if camera_image is None:
+        if camera_image is None:      # user hasn't clicked “Capture” yet
             st.info("📸 Click **Capture** to take a snapshot.")
             st.stop()
 
-        # 🆕 unique file name per shot
-        unique_id = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid4().hex[:6]}"
-        temp_image_path = os.path.join("data", "fridge_images", f"{unique_id}.jpg")
+        unique_id = f"{datetime.now():%Y%m%d_%H%M%S}_{uuid4().hex[:6]}"
+        temp_path = os.path.join("data", "fridge_images", f"{unique_id}.jpg")
 
-        with open(temp_image_path, "wb") as f:
+        with open(temp_path, "wb") as f:
             f.write(camera_image.getbuffer())
 
-        detected_ingredients = analyse_frigo(temp_image_path)
-
-        # Show the annotated version instead  ⤵︎
-        annotated_image_path = os.path.join(
-            "data", "fridge_images", "output", f"{unique_id}.jpg"
-        )
-        if os.path.exists(annotated_image_path):
-            st.image(
-                annotated_image_path,
-                caption="Annotated Fridge Image",
-                use_container_width=True,
-            )
-        else:
-            # fall-back to the raw capture only if annotation missing
-            st.image(temp_image_path, caption="(raw capture)", use_container_width=True)
-
-        detected_ingredients = analyse_frigo(temp_image_path)
-        st.write("Detected ingredients:", detected_ingredients)
-
-        annotated_image_path = os.path.join(
-            "data", "fridge_images", "output", f"{unique_id}.jpg"
-        )
-        if os.path.exists(annotated_image_path):
-            st.image(
-                annotated_image_path,
-                caption="Annotated Fridge Image",
-                use_container_width=True,
-            )
+        detected_ingredients = process_and_show(temp_path, "Annotated Fridge Image")
     else:
         st.write("Camera is deactivated. Click **Activate Camera** to start capturing.")
 
-    # ── Manual upload ─────────────────────────────────────────────────────
+
+    # ── Manual upload ───────────────────────────────────────────────────────────
     uploaded_image = st.file_uploader(
         "Or upload an image of your fridge", type=["jpg", "png", "jpeg"]
     )
     if uploaded_image is not None:
-        unique_id = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid4().hex[:6]}"
-        uploaded_image_path = os.path.join("data", "fridge_images", f"{unique_id}.jpg")
-        with open(uploaded_image_path, "wb") as f:
+        unique_id = f"{datetime.now():%Y%m%d_%H%M%S}_{uuid4().hex[:6]}"
+        upload_path = os.path.join("data", "fridge_images", f"{unique_id}.jpg")
+
+        with open(upload_path, "wb") as f:
             f.write(uploaded_image.getbuffer())
 
-        st.image(uploaded_image_path, caption="Uploaded photo", use_container_width=True)
-
-        detected_ingredients = analyse_frigo(uploaded_image_path)
-        st.write("Detected ingredients from uploaded image:", detected_ingredients)
-
-        annotated_image_path = os.path.join(
-            "data", "fridge_images", "output", f"{unique_id}.jpg"
+        detected_ingredients = process_and_show(
+            upload_path, "Annotated Fridge Image (Uploaded)"
         )
-        if os.path.exists(annotated_image_path):
-            st.image(
-                annotated_image_path,
-                caption="Annotated Fridge Image (Uploaded)",
-                use_container_width=True,
-            )
 
     # --- Ingredient Selection -------------------------------------------------
     ingredient_options = [
