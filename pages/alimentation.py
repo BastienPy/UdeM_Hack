@@ -13,6 +13,11 @@ from datetime import datetime
 # Import our YOLO-based fridge analysis function from our custom module.
 from helpers.food_detection import analyse_frigo
 
+from pathlib import Path
+import requests
+
+DEMO_IMAGE = Path("data\fridge_images\input\DSC_5941_JPG_jpg.rf.c00e39d13c6fd142558dc2cc8424a0f5.jpg")
+
 @st.cache_data
 def load_food_data():
     return pd.read_csv(r'data/processed_recipes_with_categories.csv')
@@ -104,6 +109,25 @@ def show():
         st.write("Camera is deactivated. Click 'Activate Camera' to start capturing.")
 
     # --- Manual Image Upload Option ---
+    if (
+        not detected_ingredients            # rien trouvé pour l'instant
+        and uploaded_image is None          # aucune image chargée
+        and not st.session_state.camera_active  # webcam inactive
+    ):
+        if st.button("🔍 Tester avec une image de démonstration"):
+            temp_image_path = str(DEMO_IMAGE)
+            detected_ingredients = analyse_frigo(temp_image_path)
+            st.success("Image démo analysée avec succès !")
+            st.write("Detected ingredients:", detected_ingredients)
+
+            annotated_demo = Path("data/fridge_images/output") / DEMO_IMAGE.name
+            if annotated_demo.exists():
+                st.image(
+                    str(annotated_demo),
+                    caption="Annotated Demo Fridge Image",
+                    use_container_width=True,
+                )
+                
     uploaded_image = st.file_uploader("Or upload an image of your fridge", type=["jpg", "png", "jpeg"])
 
     if uploaded_image is not None:
