@@ -132,9 +132,6 @@ def show():
                 st.image(str(annotated_demo),
                         caption="Annotated Demo Fridge Image",
                         use_container_width=True)
-                
-    uploaded_image = st.file_uploader("Or upload an image of your fridge", type=["jpg", "png", "jpeg"])
-
 
     # --- Ingredient Selection (Fixed List of 30) ---
     ingredient_options = [
