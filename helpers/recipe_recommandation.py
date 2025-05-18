@@ -64,6 +64,6 @@ def propose_recipes(ingredients_list):
         return sum(1 for ingredient in ingredients_list if ingredient in recipe_ingredients)
     
     # Filter recipes: here we require at least 3 matching ingredients.
-    matching_recipes = food_data[food_data['detected_ingredients'].apply(lambda x: count_matching_ingredients(x.lower())) >= 3]
+    matching_recipes = food_data[food_data['ingredients'].apply(lambda x: count_matching_ingredients(x.lower())) >= 3]
     
     return matching_recipes
