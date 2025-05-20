@@ -5,7 +5,13 @@ from PIL import Image
 from io import BytesIO
 
 # Load the CSV data containing recipes.
-food_data = pd.read_csv(r'data/processed_recipes_with_categories.csv')
+def load_food_data():
+    return pd.read_csv(
+        "data/processed_recipes_with_categories.csv.gz",
+        compression="gzip"
+    )
+
+food_data = load_food_data()
 
 def get_primary_image_url(html_content):
     """
