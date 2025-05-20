@@ -210,7 +210,7 @@ def show():
     st.header("Recipes Recommandations")
 
     if "matching_recipes" not in st.session_state:
-        st.session_state.matching_recipes = []
+        st.session_state.matching_recipes = pd.DataFrame()
 
     if st.button("Find Recipes"):
         if selected_ingredients:
