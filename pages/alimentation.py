@@ -19,9 +19,6 @@ SAMPLE_IMAGE_PATH = Path(
     "data/fridge_images/input/DSC_5941_JPG_jpg.rf.c00e39d13c6fd142558dc2cc8424a0f5.jpg"
 )
 
-import subprocess, pathlib
-CSV = pathlib.Path("data/processed_recipes_with_categories.csv")
-
 # ── data cache ───────────────────────────────────────────────────────────────
 @st.cache_data
 def load_food_data():
