@@ -58,11 +58,6 @@ def get_daily_calories_from_garmin(user_id):
 # ── main app ─────────────────────────────────────────────────────────────────
 def show():
     st.title("Show me the Food! I'll tell you what to eat 🍔🥗")
-    
-    st.subheader("DEBUG CSV")
-    st.write("Colonnes lues :", list(food_data.columns))
-    st.write(food_data.head())
-    st.markdown("---")
 
     # --- User ----------------------------------------------------------------
     username = st.session_state.get("user")
@@ -228,7 +223,7 @@ def show():
         else:
             st.warning("Please select at least one ingredient.")
 
-    if st.session_state.matching_recipes:
+    if not st.session_state.matching_recipes.empty:
         grade_emojis = {"A": "🟢 A", "B": "🟡 B", "C": "🟠 C", "D": "🟣 D", "E": "🔴 E"}
 
         for _, recipe in st.session_state.matching_recipes.iterrows():
