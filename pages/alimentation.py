@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path   # déjà utilisé dans analyse_frigo, on le ré-importe ici
 
 SAMPLE_IMAGE_PATH = Path(
-    "data/fridge_images/input/DSC_5941_JPG_jpg.rf.c00e39d13c6fd142558dc2cc8424a0f5.jpg"
+    r"data\fridge_images\input\DSC_6074_JPG_jpg.rf.bad4341bdd01860ddc8744c67c504699.jpg"
 )
 
 # ── data cache ───────────────────────────────────────────────────────────────
